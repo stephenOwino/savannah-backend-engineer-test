@@ -59,6 +59,14 @@ python manage.py migrate
 python manage.py runserver 8000  :: (You can replace `8000` with any port number you want (default is `8000` if you don’t specify)).
 
 
+## Demo
+
+Here’s a quick preview of the Django Admin panel:
+
+![Admin Screenshot](assets/screen1.png)
+
+
+
 
 
 
