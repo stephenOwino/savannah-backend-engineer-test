@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+
+# Virtualenv
+venv/
+.venv/
+
+# Django stuff
+db.sqlite3
+media/
+staticfiles/
+
+# VSCode / IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+
+# Pytest
+.pytest_cache/
+.coverage
+
+# Migrations (optional: keep if stable)
+*/migrations/__pycache__/
