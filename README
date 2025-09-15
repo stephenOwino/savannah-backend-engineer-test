@@ -1,3 +1,54 @@
-*Savannah Informatics - Backend Engineer Assessment*
+**Savannah Informatics - Backend Engineer Assessment**
 
 This project is a Django REST API for a simple e-commerce system, developed as part of the Savannah Informatics Backend Engineer technical assessment
+
+**Features**
+
+Customer, Product, and Order management
+
+Hierarchical product categories of arbitrary depth
+
+Authentication via OpenID Connect (OIDC)
+
+REST API for all core functionalities
+
+SMS notifications on order placement via Africa’s Talking
+
+Email alerts to admins on order placemen
+
+
+**Tech Stack**
+
+Backend: Python, Django, Django REST Framework
+
+Database: PostgreSQL
+
+Authentication: OIDC
+
+Containerization: Docker
+
+CI/CD: GitHub Actions
+
+Deployment: Kubernetes
+
+
+**API Endpoints**
+
+
+
+**LOCAL SETUP**
+git clone https://github.com/YOUR-USERNAME/savannah-backend-engineer-test.git
+cd savannah-backend-engineer-test
+
+
+**Create & activate virtualenv**
+python -m venv venv
+source venv/bin/activate -->>ON MAC/LINUX MACHINES
+       venv\Scripts\activate --> ON WINDOWS MACHINES ONLY
+
+
+
+
+
+
+
