@@ -47,6 +47,18 @@ source venv/bin/activate -->>ON MAC/LINUX MACHINES
        venv\Scripts\activate --> ON WINDOWS MACHINES ONLY
 
 
+## Install dependencies
+pip install -r requirements.txt
+
+
+## Run migrations
+python manage.py migrate
+
+
+## Start the server
+python manage.py runserver 8000  :: (You can replace `8000` with any port number you want (default is `8000` if you don’t specify)).
+
+
 
 
 
