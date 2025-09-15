@@ -1,8 +1,8 @@
-**Savannah Informatics - Backend Engineer Assessment**
+# Savannah Informatics - Backend Engineer Assessment
 
 This project is a Django REST API for a simple e-commerce system, developed as part of the Savannah Informatics Backend Engineer technical assessment
 
-**Features**
+## Features
 
 Customer, Product, and Order management
 
@@ -17,7 +17,7 @@ SMS notifications on order placement via Africa’s Talking
 Email alerts to admins on order placemen
 
 
-**Tech Stack**
+## Tech Stack
 
 Backend: Python, Django, Django REST Framework
 
@@ -32,16 +32,16 @@ CI/CD: GitHub Actions
 Deployment: Kubernetes
 
 
-**API Endpoints**
+## API Endpoints
 
 
 
-**LOCAL SETUP**
+## LOCAL SETUP
 git clone https://github.com/YOUR-USERNAME/savannah-backend-engineer-test.git
 cd savannah-backend-engineer-test
 
 
-**Create & activate virtualenv**
+## Create & activate virtualenv
 python -m venv venv
 source venv/bin/activate -->>ON MAC/LINUX MACHINES
        venv\Scripts\activate --> ON WINDOWS MACHINES ONLY
