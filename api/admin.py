@@ -1,4 +1,3 @@
-
 from django.contrib import admin
 from .models import Customer, Category, Product, Order, OrderItem
 
@@ -26,7 +25,4 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     inlines = [OrderItemInline]
 
-# We don't need to register Customer or OrderItem separately now
-# as they are handled by other admin views.
-# We can register Customer if we want a separate view for it.
 admin.site.register(Customer)
