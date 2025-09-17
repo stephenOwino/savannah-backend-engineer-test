@@ -77,15 +77,15 @@ WSGI_APPLICATION = 'savannah_assess.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': '',
+        'NAME': 'savannadb',
 
-        'USER': '',
+        'USER': 'postgres',
 
-        'PASSWORD': '',
+        'PASSWORD': 'Steve@123',
 
-        'HOST': '',
+        'HOST': 'localhost',
 
-        'PORT': '',
+        'PORT': '5432',
         
     }
 }
