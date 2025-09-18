@@ -6,8 +6,6 @@ from rest_framework.response import Response
 from .models import Category, Order, Product
 from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
 
-# Create your views here.
-
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -36,8 +34,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
             average_price=Avg("price")
         )
         return Response(result)
-    
-    
+
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -48,5 +46,5 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
     def perform_create(self, serializer):
-
         pass
+
