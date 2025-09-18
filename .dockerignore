@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtualenv
+venv/
+.venv/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# IDEs
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+
+# Git
+.git
+.gitignore
