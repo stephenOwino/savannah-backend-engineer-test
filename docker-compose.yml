@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:13-alpine
+    image: postgres:latest
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
