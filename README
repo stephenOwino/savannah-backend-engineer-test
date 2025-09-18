@@ -66,6 +66,22 @@ Here’s a quick preview of the Django Admin panel:
 ![Admin Screenshot](assets/screen1.png)
 
 
+**CODE QUALITY & LINTING**
+
+This project uses flake8, black, and isort for consistent code style.
+
+***TO INSTALL***,
+ pip install black flake8 isort
+
+ ***Run linting:***
+ flake8 .
+
+
+***Format code automatically:***
+black .
+isort .
+
+
 
 
 
