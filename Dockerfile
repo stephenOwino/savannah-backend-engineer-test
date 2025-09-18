@@ -4,7 +4,7 @@ FROM python:3.12-slim as builder
 WORKDIR /usr/src/app
 
 # environment variables
-ENV PYTHONTWRITEBYTECODE=1
+ENV PYTHONDONTWRITEBYTECODE=1 
 ENV PYTHONUNBUFFERED=1
 
 # Copy requirements and install wheels. No system dependencies needed for psycopg2-binary.
