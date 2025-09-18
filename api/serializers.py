@@ -1,33 +1,38 @@
 from rest_framework import serializers
-from .models import Category, Product, Order, OrderItem
+
+from .models import Category, Order, OrderItem, Product
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name', 'parent']
+        fields = ["id", "name", "parent"]
+
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'category', 'stock']
+        fields = ["id", "name", "description", "price", "category", "stock"]
+
 
 # This serializer is for creating an order
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['product', 'quantity']
+        fields = ["product", "quantity"]
+
 
 class OrderSerializer(serializers.ModelSerializer):
     products = OrderItemSerializer(many=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'created_at', 'products', 'total_amount']
-        read_only_fields = ['customer', 'total_amount']
+        fields = ["id", "customer", "created_at", "products", "total_amount"]
+        read_only_fields = ["customer", "total_amount"]
 
     def create(self, validated_data):
         # Get the product data from the request
-        products_data = validated_data.pop('products')
+        products_data = validated_data.pop("products")
 
         # Create the main order object
         order = Order.objects.create(**validated_data)
