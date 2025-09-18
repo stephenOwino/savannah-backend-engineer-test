@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate --noinput && gunicorn savannah_assess.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/usr/src/app/
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=${DEBUG}
+      - DB_HOST=db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT} 
+      # OIDC environment variables
+      # - OIDC_RP_CLIENT_ID=${OIDC_RP_CLIENT_ID}
+      # - OIDC_RP_CLIENT_SECRET=${OIDC_RP_CLIENT_SECRET}
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
