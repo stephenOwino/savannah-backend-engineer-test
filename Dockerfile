@@ -1,31 +1,34 @@
-# --- Stage 1: Build stage ---
-FROM python:3.12-slim as builder
+# --- Stage 1: Build dependencies ---
+FROM python:3.12-slim AS builder
 
 WORKDIR /usr/src/app
 
-# environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 
+# Prevent writing pyc files and unbuffered logs
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Copy requirements and install wheels. No system dependencies needed for psycopg2-binary.
+# Copy requirements and build wheels
 COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
 
-
-# --- Stage 2: Final stage ---
+# --- Stage 2: Final image ---
 FROM python:3.12-slim
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy installed wheels from the builder stage
+# Copy pre-built wheels and install them
 COPY --from=builder /usr/src/app/wheels /wheels
 RUN pip install --no-cache /wheels/*
 
-# Copy the entire project into the image
+# Copy project code
 COPY . .
 
-# Expose the port Gunicorn will run on
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
+
+# Expose default port
 EXPOSE 8000
 
-# The command to run the application (ensure project name is correct)
-CMD ["gunicorn", "savannah_assess.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Run the entrypoint
+CMD ["/app/entrypoint.sh"]
+
