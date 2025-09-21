@@ -1,35 +1,32 @@
+version: '3.9'
+
 services:
-  db:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: savannah_assess:v1
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_db
+    restart: always
+    command: ["/app/start.sh"]
+
+  postgres_db:
     image: postgres:latest
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    restart: always
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Comment out in production:
     ports:
       - "5433:5432"
-
-  web:
-    build: .
-    command: >
-      sh -c "python manage.py migrate --noinput && gunicorn savannah_assess.wsgi:application --bind 0.0.0.0:8000"
-    volumes:
-      - .:/usr/src/app/
-    ports:
-      - "8000:8000"
-    environment:
-      - DEBUG=${DEBUG}
-      - DB_HOST=db
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_PORT=${DB_PORT} 
-      # OIDC environment variables
-      # - OIDC_RP_CLIENT_ID=${OIDC_RP_CLIENT_ID}
-      # - OIDC_RP_CLIENT_SECRET=${OIDC_RP_CLIENT_SECRET}
-    depends_on:
-      - db
 
 volumes:
   postgres_data:
