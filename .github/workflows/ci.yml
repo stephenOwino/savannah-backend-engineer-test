@@ -17,7 +17,7 @@ jobs:
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DB_HOST: postgres
+      DB_HOST: postgres_db
       DB_PORT: "5432"
       DJANGO_SUPERUSER_USERNAME: ${{ secrets.DJANGO_SUPERUSER_USERNAME }}
       DJANGO_SUPERUSER_EMAIL: ${{ secrets.DJANGO_SUPERUSER_EMAIL }}
@@ -26,7 +26,7 @@ jobs:
       PORT: "8888"
 
     services:
-      postgres:
+      postgres_db:
         image: postgres:latest
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
@@ -57,8 +57,10 @@ jobs:
           echo "POSTGRES_USER=$POSTGRES_USER"
           echo "DB_HOST=$DB_HOST"
           echo "DB_PORT=$DB_PORT"
-          if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ]; then
-            echo "Error: One or more Postgres secrets are unset"
+          echo "DJANGO_SUPERUSER_USERNAME=$DJANGO_SUPERUSER_USERNAME"
+          echo "DJANGO_SUPERUSER_EMAIL=$DJANGO_SUPERUSER_EMAIL"
+          if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ] || [ -z "$DJANGO_SUPERUSER_USERNAME" ] || [ -z "$DJANGO_SUPERUSER_EMAIL" ] || [ -z "$DJANGO_SUPERUSER_PASSWORD" ]; then
+            echo "Error: One or more required secrets are unset"
             exit 1
           fi
 
@@ -73,10 +75,19 @@ jobs:
           docker ps -f "ancestor=postgres:latest"
           echo "Inspecting Postgres container..."
           docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.State.Status}}' || echo "No Postgres container found"
+          echo "Resolving Postgres container IP..."
+          POSTGRES_IP=$(docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.NetworkSettings.IPAddress}}' || echo "")
+          if [ -n "$POSTGRES_IP" ]; then
+            echo "Using container IP: $POSTGRES_IP"
+            DB_HOST=$POSTGRES_IP
+          else
+            echo "Failed to resolve container IP, falling back to localhost"
+            DB_HOST=localhost
+          fi
           echo "Testing network connectivity to $DB_HOST:$DB_PORT..."
           nc -zv $DB_HOST $DB_PORT 2>&1 || echo "Network connection to $DB_HOST:$DB_PORT failed"
-          echo "Waiting 10 seconds for Postgres to initialize..."
-          sleep 10
+          echo "Waiting 20 seconds for Postgres to initialize..."
+          sleep 20
           for i in {1..30}; do
             if pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; then
               echo "Postgres is ready!"
