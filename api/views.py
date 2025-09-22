@@ -3,10 +3,11 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from .models import Category, Customer, Order, Product
+from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
+
 # from rest_framework.permissions import IsAuthenticated
 
-from .models import Category, Order, Product, Customer
-from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
