@@ -15,7 +15,7 @@ jobs:
 
     env:
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -30,7 +30,7 @@ jobs:
         image: postgres:latest
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
@@ -57,6 +57,10 @@ jobs:
           echo "POSTGRES_USER=$POSTGRES_USER"
           echo "DB_HOST=$DB_HOST"
           echo "DB_PORT=$DB_PORT"
+          if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ]; then
+            echo "Error: One or more Postgres secrets are unset"
+            exit 1
+          fi
 
       - name: Install dependencies
         run: |
@@ -67,6 +71,12 @@ jobs:
         run: |
           echo "Checking Postgres container status..."
           docker ps -f "ancestor=postgres:latest"
+          echo "Inspecting Postgres container..."
+          docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.State.Status}}' || echo "No Postgres container found"
+          echo "Testing network connectivity to $DB_HOST:$DB_PORT..."
+          nc -zv $DB_HOST $DB_PORT 2>&1 || echo "Network connection to $DB_HOST:$DB_PORT failed"
+          echo "Waiting 5 seconds for Postgres to initialize..."
+          sleep 5
           for i in {1..30}; do
             if pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; then
               echo "Postgres is ready!"
@@ -78,14 +88,14 @@ jobs:
           done
           echo "Error: Postgres not ready after 60 seconds"
           echo "Postgres container logs:"
-          docker logs $(docker ps -qf "ancestor=postgres:latest")
+          docker logs $(docker ps -qf "ancestor=postgres:latest") 2>&1 || echo "Failed to retrieve logs"
           echo "Postgres container status:"
-          docker ps -f "ancestor=postgres:latest")
+          docker ps -f "ancestor=postgres:latest"
           exit 1
 
       - name: Debug Postgres logs if failure
         if: failure()
-        run: docker logs $(docker ps -qf "ancestor=postgres:latest")
+        run: docker logs $(docker ps -qf "ancestor=postgres:latest") 2>&1 || echo "No Postgres container logs available"
 
       - name: Run migrations and create superuser
         run: ./migration.sh
