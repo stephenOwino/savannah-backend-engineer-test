@@ -65,10 +65,23 @@ jobs:
 
       - name: Wait for Postgres
         run: |
-          until pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; do
-            echo "Waiting for Postgres..."
+          echo "Checking Postgres container status..."
+          docker ps -f "ancestor=postgres:latest"
+          for i in {1..30}; do
+            if pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; then
+              echo "Postgres is ready!"
+              exit 0
+            fi
+            echo "Waiting for Postgres... (attempt $i/30)"
+            pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER 2>&1 || echo "pg_isready failed with exit code $?"
             sleep 2
           done
+          echo "Error: Postgres not ready after 60 seconds"
+          echo "Postgres container logs:"
+          docker logs $(docker ps -qf "ancestor=postgres:latest")
+          echo "Postgres container status:"
+          docker ps -f "ancestor=postgres:latest")
+          exit 1
 
       - name: Debug Postgres logs if failure
         if: failure()
