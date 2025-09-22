@@ -2,7 +2,7 @@ from django.db.models import Avg
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-# from rest_framework.permissions import IsAuthenticated  
+# from rest_framework.permissions import IsAuthenticated
 
 from .models import Category, Order, Product, Customer
 from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
@@ -37,8 +37,8 @@ class ProductViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    # permission_classes = [IsAuthenticated] 
-
+    # permission_classes = [IsAuthenticated]
+   
     def perform_create(self, serializer):
         try:
             # Attempt to get customer with ID 1
