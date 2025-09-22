@@ -38,7 +38,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     # permission_classes = [IsAuthenticated]
-   
+
     def perform_create(self, serializer):
         try:
             # Attempt to get customer with ID 1
