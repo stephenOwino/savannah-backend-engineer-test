@@ -109,7 +109,7 @@ jobs:
         run: docker logs $(docker ps -qf "ancestor=postgres:latest") 2>&1 || echo "No Postgres container logs available"
 
       - name: Run migrations and create superuser
-        run: ./migration.sh
+        run: ./migrate.sh
 
       - name: Collect static files
         run: python manage.py collectstatic --noinput
