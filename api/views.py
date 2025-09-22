@@ -2,6 +2,7 @@ from django.db.models import Avg
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 # from rest_framework.permissions import IsAuthenticated
 
 from .models import Category, Order, Product, Customer
@@ -46,6 +47,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         except Customer.DoesNotExist:
             # If not found, raise error
             from rest_framework.exceptions import ValidationError
-            raise ValidationError("Test customer with ID 1 does not exist. Please create one.")
+
+            raise ValidationError(
+                "Test customer with ID 1 does not exist. Please create one."
+            )
 
         serializer.save(customer=customer)
