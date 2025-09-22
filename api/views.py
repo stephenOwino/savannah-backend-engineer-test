@@ -9,7 +9,6 @@ from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
 # from rest_framework.permissions import IsAuthenticated
 
 
-
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
