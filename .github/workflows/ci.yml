@@ -75,8 +75,8 @@ jobs:
           docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.State.Status}}' || echo "No Postgres container found"
           echo "Testing network connectivity to $DB_HOST:$DB_PORT..."
           nc -zv $DB_HOST $DB_PORT 2>&1 || echo "Network connection to $DB_HOST:$DB_PORT failed"
-          echo "Waiting 5 seconds for Postgres to initialize..."
-          sleep 5
+          echo "Waiting 10 seconds for Postgres to initialize..."
+          sleep 10
           for i in {1..30}; do
             if pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; then
               echo "Postgres is ready!"
