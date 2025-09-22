@@ -17,7 +17,7 @@ jobs:
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DB_HOST: postgres_db
+      DB_HOST: localhost
       DB_PORT: "5432"
       DJANGO_SUPERUSER_USERNAME: ${{ secrets.DJANGO_SUPERUSER_USERNAME }}
       DJANGO_SUPERUSER_EMAIL: ${{ secrets.DJANGO_SUPERUSER_EMAIL }}
@@ -75,15 +75,6 @@ jobs:
           docker ps -f "ancestor=postgres:latest"
           echo "Inspecting Postgres container..."
           docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.State.Status}}' || echo "No Postgres container found"
-          echo "Resolving Postgres container IP..."
-          POSTGRES_IP=$(docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.NetworkSettings.IPAddress}}' || echo "")
-          if [ -n "$POSTGRES_IP" ]; then
-            echo "Using container IP: $POSTGRES_IP"
-            DB_HOST=$POSTGRES_IP
-          else
-            echo "Failed to resolve container IP, falling back to localhost"
-            DB_HOST=localhost
-          fi
           echo "Testing network connectivity to $DB_HOST:$DB_PORT..."
           nc -zv $DB_HOST $DB_PORT 2>&1 || echo "Network connection to $DB_HOST:$DB_PORT failed"
           echo "Waiting 20 seconds for Postgres to initialize..."
