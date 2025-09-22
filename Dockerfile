@@ -3,13 +3,14 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /usr/src/app
 
-# Prevent writing pyc files and unbuffered logs
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 # Install build tools for psycopg2 / Pillow
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev gcc \
+    build-essential \
+    libpq-dev \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and build wheels
@@ -29,18 +30,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy pre-built wheels and install them
 COPY --from=builder /usr/src/app/wheels /wheels
-RUN pip install --no-cache /wheels/*
+RUN pip install --no-cache-dir /wheels/*
 
-# Copy project code
+# Copy all project files
 COPY . .
+
+# Copy scripts explicitly
+COPY entrypoint.sh /app/entrypoint.sh
+COPY migrate.sh /app/migrate.sh
 
 # Make scripts executable
 RUN chmod +x /app/migrate.sh /app/entrypoint.sh
 
-# Expose default port
-EXPOSE 8000
+# Expose Django default port
+EXPOSE 8888
 
-# Default command (overridden by docker-compose)
+# Default command
 CMD ["/app/entrypoint.sh"]
 
 

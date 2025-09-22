@@ -1,4 +1,3 @@
-
 name: Django CI
 
 on:
@@ -35,6 +34,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Apply Django migrations
+        run: python manage.py migrate --noinput
+
+      - name: Collect static files
+        run: python manage.py collectstatic --noinput
+
       - name: Lint with flake8
         run: flake8 .
 
@@ -43,4 +48,3 @@ jobs:
 
       - name: Check imports with isort
         run: isort . --check-only
-

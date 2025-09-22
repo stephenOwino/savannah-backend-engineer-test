@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 
 services:
   web:
@@ -7,24 +7,21 @@ services:
       dockerfile: Dockerfile
     image: savannah_assess:v1
     env_file:
-      - .env
+      - /home/stephenexerer/Desktop/savvannah_assessment/.env
     ports:
-      - "8000:8000"
+      - "8888:8888"
     depends_on:
       - postgres_db
     restart: always
-    command: ["/app/start.sh"]
+    command: sh -c "/app/migrate.sh && /app/entrypoint.sh"
 
   postgres_db:
     image: postgres:latest
     restart: always
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+    env_file:
+      - /home/stephenexerer/Desktop/savvannah_assessment/.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    # Comment out in production:
+      - postgres_data:/var/lib/postgresql/data/
     ports:
       - "5433:5432"
 
