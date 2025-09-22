@@ -17,7 +17,7 @@ jobs:
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DB_HOST: localhost
+      DB_HOST: postgres   # must match the service name
       DB_PORT: "5432"
       DJANGO_SUPERUSER_USERNAME: ${{ secrets.DJANGO_SUPERUSER_USERNAME }}
       DJANGO_SUPERUSER_EMAIL: ${{ secrets.DJANGO_SUPERUSER_EMAIL }}
@@ -27,15 +27,15 @@ jobs:
 
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:15
         env:
-          POSTGRES_DB: $POSTGRES_DB
-          POSTGRES_USER: $POSTGRES_USER
-          POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-cmd="pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -56,6 +56,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Debug environment variables
+        run: |
+          echo "POSTGRES_DB=$POSTGRES_DB"
+          echo "POSTGRES_USER=$POSTGRES_USER"
+          echo "DB_HOST=$DB_HOST"
+          echo "DB_PORT=$DB_PORT"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -67,6 +74,10 @@ jobs:
             echo "Waiting for Postgres..."
             sleep 2
           done
+
+      - name: Debug Postgres logs if failure
+        if: failure()
+        run: docker logs $(docker ps -qf "ancestor=postgres:15")
 
       - name: Run migrations and create superuser
         run: ./migration.sh
