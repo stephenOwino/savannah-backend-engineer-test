@@ -108,6 +108,20 @@ jobs:
         if: failure()
         run: docker logs $(docker ps -qf "ancestor=postgres:latest") 2>&1 || echo "No Postgres container logs available"
 
+      - name: Verify migrate.sh
+        run: |
+          echo "Listing files in working directory..."
+          ls -la
+          echo "Checking migrate.sh permissions..."
+          if [ -f "./migrate.sh" ]; then
+            ls -l ./migrate.sh
+            chmod +x ./migrate.sh
+            echo "migrate.sh found and made executable"
+          else
+            echo "Error: migrate.sh not found in working directory"
+            exit 1
+          fi
+
       - name: Run migrations and create superuser
         run: ./migrate.sh
 
