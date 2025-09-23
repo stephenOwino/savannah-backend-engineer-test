@@ -1,0 +1,29 @@
+[
+  {
+    "model": "api.category",
+    "pk": 1,
+    "fields": { "name": "Clothing", "parent": null }
+  },
+  {
+    "model": "api.product",
+    "pk": 1,
+    "fields": {
+      "name": "T-Shirt",
+      "description": "Blue cotton T-shirt",
+      "price": "15.99",
+      "category": 1,
+      "stock": 50
+    }
+  },
+  {
+    "model": "api.product",
+    "pk": 2,
+    "fields": {
+      "name": "Jeans",
+      "description": "Denim jeans",
+      "price": "45.00",
+      "category": 1,
+      "stock": 30
+    }
+  }
+]
