@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Category, Product, Order, OrderItem
+
+from .models import Category, Order, OrderItem, Product
 
 
 class RecursiveCategorySerializer(serializers.Serializer):

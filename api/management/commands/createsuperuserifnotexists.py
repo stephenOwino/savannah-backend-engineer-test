@@ -1,6 +1,8 @@
 import os
+
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
 from api.models import Customer
 
 User = get_user_model()
