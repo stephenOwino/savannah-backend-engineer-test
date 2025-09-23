@@ -4,6 +4,7 @@ from .models import Category, Product, Order, OrderItem
 
 class RecursiveCategorySerializer(serializers.Serializer):
     """Serializer for nested children categories."""
+
     def to_representation(self, value):
         serializer = self.parent.parent.__class__(value, context=self.context)
         return serializer.data
@@ -18,11 +19,19 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
         model = Product
-        fields = ["id", "name", "description", "price", "category", "category_name", "stock"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "price",
+            "category",
+            "category_name",
+            "stock",
+        ]
 
     def validate_price(self, value):
         if value <= 0:
@@ -32,16 +41,18 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class OrderItemReadSerializer(serializers.ModelSerializer):
     """Serializer for reading order items."""
-    product_name = serializers.CharField(source='product.name')
+
+    product_name = serializers.CharField(source="product.name")
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'subtotal']
+        fields = ["id", "product", "product_name", "quantity", "subtotal"]
 
 
 class OrderItemWriteSerializer(serializers.Serializer):
     """Serializer for writing (creating) order items."""
+
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
 
@@ -53,8 +64,10 @@ class OrderItemWriteSerializer(serializers.Serializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     # For reading order details
-    items = OrderItemReadSerializer(source='orderitem_set', many=True, read_only=True)
-    customer_name = serializers.CharField(source='customer.user.username', read_only=True)
+    items = OrderItemReadSerializer(source="orderitem_set", many=True, read_only=True)
+    customer_name = serializers.CharField(
+        source="customer.user.username", read_only=True
+    )
 
     # For creating an order
     products = OrderItemWriteSerializer(many=True, write_only=True)
@@ -62,15 +75,20 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'customer', 'customer_name', 'created_at', 'total_amount',
-            'items', 'products'
+            "id",
+            "customer",
+            "customer_name",
+            "created_at",
+            "total_amount",
+            "items",
+            "products",
         ]
 
         read_only_fields = [
-            'id',
-            'customer',
-            'customer_name',
-            'created_at',
-            'total_amount',
-            'items'
+            "id",
+            "customer",
+            "customer_name",
+            "created_at",
+            "total_amount",
+            "items",
         ]

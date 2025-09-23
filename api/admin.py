@@ -25,7 +25,7 @@ class ProductAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ('subtotal',)
+    readonly_fields = ("subtotal",)
 
 
 @admin.register(Order)
@@ -33,12 +33,12 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "customer", "total_amount", "created_at")
     list_filter = ("created_at", "customer__user__username")
     search_fields = ("id", "customer__user__username")
-    readonly_fields = ('total_amount', 'created_at')
+    readonly_fields = ("total_amount", "created_at")
     inlines = [OrderItemInline]
-    date_hierarchy = 'created_at'
+    date_hierarchy = "created_at"
 
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ("order", "product", "quantity", "subtotal")
-    readonly_fields = ('subtotal',)
+    readonly_fields = ("subtotal",)

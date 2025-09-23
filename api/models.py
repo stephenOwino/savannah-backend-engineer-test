@@ -53,7 +53,9 @@ class Order(models.Model):
     @transaction.atomic
     def update_total_amount(self):
         """Calculates and saves the total amount from all its order items using Decimal."""
-        total = sum((item.subtotal for item in self.orderitem_set.all()), Decimal('0.00'))
+        total = sum(
+            (item.subtotal for item in self.orderitem_set.all()), Decimal("0.00")
+        )
         self.total_amount = total
         self.save()
         return total
@@ -65,7 +67,7 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
 
     class Meta:
-        unique_together = ('order', 'product')
+        unique_together = ("order", "product")
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name}"

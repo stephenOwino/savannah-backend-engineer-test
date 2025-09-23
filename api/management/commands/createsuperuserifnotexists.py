@@ -46,9 +46,7 @@ class Command(BaseCommand):
         # Create customer if it doesn't exist
         if not Customer.objects.filter(user=user).exists():
             Customer.objects.create(
-                user=user,
-                phone_number=customer_phone,
-                address=customer_address
+                user=user, phone_number=customer_phone, address=customer_address
             )
             self.stdout.write(self.style.SUCCESS(f"Created customer for {username}"))
         else:
