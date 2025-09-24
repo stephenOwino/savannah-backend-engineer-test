@@ -114,7 +114,7 @@ AFRICASTALKING_USERNAME = config("AFRICASTALKING_USERNAME", default="sandbox")
 AFRICASTALKING_API_KEY = config("AFRICASTALKING_API_KEY", default=None)
 AFRICASTALKING_SENDER_ID = config("AFRICASTALKING_SENDER_ID", default="")
 ADMIN_EMAIL = config("ADMIN_EMAIL", default="stephenowin233@gmail.com")
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 
 # Internationalization

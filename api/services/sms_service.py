@@ -23,7 +23,7 @@ class SMSService:
                 # Initialize Africa's Talking
                 africastalking.initialize(self.username, self.api_key)
 
-                # Only get the SMS service - this is what we actually need
+                # Only get the SMS service
                 self._sms = africastalking.SMS
                 logger.info("Africa's Talking SMS service initialized successfully")
 
