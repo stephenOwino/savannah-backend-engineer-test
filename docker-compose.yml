@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     image: savannah_assess:v1
     env_file:
-      - /home/stephenexerer/Desktop/savvannah_assessment/.env
+      - .env
     ports:
       - "8888:8888"
     depends_on:
@@ -19,7 +19,7 @@ services:
     image: postgres:latest
     restart: always
     env_file:
-      - /home/stephenexerer/Desktop/savvannah_assessment/.env
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     ports:

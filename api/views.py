@@ -17,14 +17,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-        """Only show root categories (parent=None)."""
+        # Only show root categories (parent=None).
         queryset = self.get_queryset().filter(parent=None)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
     def average_price(self, request, pk=None):
-        """Return the average price for all products in a category (including children)."""
+        # Return the average price for all products in a category (including children).
         category = self.get_object()
         descendant_ids = [category.id] + list(
             category.children.values_list("id", flat=True)
@@ -45,7 +45,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        """Filter products by category if ?category=<id> is provided."""
+        # Filter products by category if ?category=<id> is provided.
         queryset = super().get_queryset()
         category_id = self.request.query_params.get("category")
         if category_id:
@@ -59,19 +59,11 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_customer(self, user):
-        """
-        Ensure the user has an associated Customer object.
-        For testing (no auth), just return the first Customer.
-        """
         if not user or user.is_anonymous:
             return Customer.objects.first()
         return get_object_or_404(Customer, user=user)
 
     def get_queryset(self):
-        """
-        For testing: show all orders if no authentication.
-        In production: restrict to the logged-in user's orders.
-        """
         if self.request.user.is_anonymous:
             return self.queryset
         customer = self.get_customer(self.request.user)
@@ -151,11 +143,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
-        """
-        Update an order:
-        - Replace items if provided
-        - Recalculate stock & total
-        """
+        # Update an order:
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
 

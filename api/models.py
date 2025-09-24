@@ -55,7 +55,7 @@ class Order(models.Model):
     def update_total_amount(self):
         """Calculates and saves the total amount from all its order items using Decimal."""
         total = sum(
-            (item.subtotal for item in self.orderitem_set.all()), Decimal("0.00")
+            (item.subtotal for item in self.items.all()), Decimal("0.00")
         )
         self.total_amount = total
         self.save()
@@ -63,7 +63,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
 
