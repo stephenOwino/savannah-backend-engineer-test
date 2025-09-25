@@ -1,19 +1,23 @@
-import os
-import sys
-from pathlib import Path
-
-import django
 import pytest
+
+# All imports must be at the top
+from django.contrib.auth.models import User
 from playwright.sync_api import sync_playwright
 
-# Django setup
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
-django.setup()
-
-from django.contrib.auth.models import User
-
 from api.models import Category, Customer, Product
+
+
+# Django setup hook for pytest
+def pytest_configure():
+    import os
+    import sys
+    from pathlib import Path
+
+    import django
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
+    django.setup()
 
 
 @pytest.fixture
