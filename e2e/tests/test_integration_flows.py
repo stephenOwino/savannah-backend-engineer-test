@@ -1,6 +1,8 @@
-import pytest
 import json
+
+import pytest
 from playwright.sync_api import APIRequestContext
+
 
 @pytest.mark.integration
 @pytest.mark.slow
@@ -46,7 +48,9 @@ class TestIntegrationFlows:
         assert "created_at" in order_json
         assert order_json["customer"] == test_data["customer"].id
 
-    def test_inventory_management_flow(self, api_request_context, test_data, live_server):
+    def test_inventory_management_flow(
+        self, api_request_context, test_data, live_server
+    ):
         product = test_data["products"][0]
         # Correct field name is "stock" (from your Product model)
         update_data = {"stock": 20}
@@ -57,7 +61,9 @@ class TestIntegrationFlows:
         assert resp.status == 200
         assert resp.json()["stock"] == 20
 
-    def test_category_hierarchy_with_pricing(self, api_request_context, test_data, live_server):
+    def test_category_hierarchy_with_pricing(
+        self, api_request_context, test_data, live_server
+    ):
         resp = api_request_context.get(f"{live_server.url}/api/categories/")
         assert resp.status == 200
         categories = resp.json()

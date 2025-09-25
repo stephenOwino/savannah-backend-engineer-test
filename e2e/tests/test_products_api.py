@@ -1,6 +1,8 @@
-import pytest
 import json
+
+import pytest
 from playwright.sync_api import APIRequestContext
+
 
 @pytest.mark.api
 class TestProductsAPI:
@@ -14,12 +16,20 @@ class TestProductsAPI:
         assert len(data) >= 2
 
         expected_fields = [
-            "id", "name", "description", "price", "category", "category_name", "stock"
+            "id",
+            "name",
+            "description",
+            "price",
+            "category",
+            "category_name",
+            "stock",
         ]
         for field in expected_fields:
             assert field in data[0]
 
-    def test_filter_products_by_category(self, api_request_context, test_data, live_server):
+    def test_filter_products_by_category(
+        self, api_request_context, test_data, live_server
+    ):
         sub_category = test_data["sub_category"]
         response = api_request_context.get(
             f"{live_server.url}/api/products/?category={sub_category.id}"
@@ -42,7 +52,7 @@ class TestProductsAPI:
         response = api_request_context.post(
             f"{live_server.url}/api/products/",
             data=json.dumps(new_product),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 201
         data = response.json()
@@ -50,7 +60,9 @@ class TestProductsAPI:
         assert float(data["price"]) == 199999.00
         assert data["stock"] == 3
 
-    def test_create_product_invalid_price(self, api_request_context, test_data, live_server):
+    def test_create_product_invalid_price(
+        self, api_request_context, test_data, live_server
+    ):
         sub_category = test_data["sub_category"]
         invalid_product = {
             "name": "Free Phone",
@@ -62,7 +74,7 @@ class TestProductsAPI:
         response = api_request_context.post(
             f"{live_server.url}/api/products/",
             data=json.dumps(invalid_product),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 400
         data = response.json()
@@ -70,7 +82,9 @@ class TestProductsAPI:
 
     def test_get_product_detail(self, api_request_context, test_data, live_server):
         product1 = test_data["products"][0]
-        response = api_request_context.get(f"{live_server.url}/api/products/{product1.id}/")
+        response = api_request_context.get(
+            f"{live_server.url}/api/products/{product1.id}/"
+        )
         assert response.status == 200
         data = response.json()
         assert data["id"] == product1.id
@@ -81,7 +95,7 @@ class TestProductsAPI:
         response = api_request_context.patch(
             f"{live_server.url}/api/products/{product1.id}/",
             data=json.dumps(update_data),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 200
         assert response.json()["stock"] == 15

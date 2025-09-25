@@ -1,6 +1,8 @@
-import pytest
 import json
+
+import pytest
 from playwright.sync_api import APIRequestContext
+
 
 @pytest.mark.api
 class TestOrdersAPI:
@@ -17,7 +19,7 @@ class TestOrdersAPI:
         response = api_request_context.post(
             f"{live_server.url}/api/orders/",
             data=json.dumps(order_data),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 201
         data = response.json()
@@ -25,23 +27,26 @@ class TestOrdersAPI:
         assert data["customer"] == test_data["customer"].id
         assert "created_at" in data
 
-    def test_create_order_insufficient_stock(self, api_request_context, test_data, live_server):
+    def test_create_order_insufficient_stock(
+        self, api_request_context, test_data, live_server
+    ):
         product1 = test_data["products"][0]
         order_data = {"products": [{"product_id": product1.id, "quantity": 1000}]}
         response = api_request_context.post(
             f"{live_server.url}/api/orders/",
             data=json.dumps(order_data),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 400
 
-    def test_create_order_invalid_quantity(self, api_request_context, test_data, live_server):
+    def test_create_order_invalid_quantity(
+        self, api_request_context, test_data, live_server
+    ):
         product1 = test_data["products"][0]
         order_data = {"products": [{"product_id": product1.id, "quantity": 0}]}
         response = api_request_context.post(
             f"{live_server.url}/api/orders/",
             data=json.dumps(order_data),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 400
-

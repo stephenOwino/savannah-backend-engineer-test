@@ -1,5 +1,6 @@
-import pytest
 import json
+
+import pytest
 
 
 @pytest.mark.api
@@ -44,5 +45,7 @@ class TestCategoryCRUD:
         resp = api_request_context.delete(f"{live_server.url}/api/categories/{sub_id}/")
         assert resp.status == 204
 
-        get_resp = api_request_context.get(f"{live_server.url}/api/categories/{sub_id}/")
+        get_resp = api_request_context.get(
+            f"{live_server.url}/api/categories/{sub_id}/"
+        )
         assert get_resp.status == 404

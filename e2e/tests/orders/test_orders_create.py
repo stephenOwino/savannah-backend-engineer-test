@@ -13,7 +13,9 @@ def test_create_order(api_request_context: APIRequestContext, sample_product):
     assert data["total_amount"] > 0
 
 
-def test_create_order_invalid_quantity(api_request_context: APIRequestContext, sample_product):
+def test_create_order_invalid_quantity(
+    api_request_context: APIRequestContext, sample_product
+):
     payload = {"items": [{"product": sample_product["id"], "quantity": 9999}]}
     response = api_request_context.post("/api/orders/", data=payload)
     assert response.status == 400

@@ -18,5 +18,7 @@ class TestCategoryCustomActions:
         resp = api_request_context.get(f"{live_server.url}/api/categories/999/")
         assert resp.status == 404
 
-        resp = api_request_context.get(f"{live_server.url}/api/categories/999/average_price/")
+        resp = api_request_context.get(
+            f"{live_server.url}/api/categories/999/average_price/"
+        )
         assert resp.status == 404

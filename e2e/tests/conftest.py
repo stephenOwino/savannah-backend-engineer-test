@@ -1,9 +1,10 @@
-import pytest
 import os
 import sys
 from pathlib import Path
+
 import django
-from playwright.sync_api import sync_playwright, APIRequestContext
+import pytest
+from playwright.sync_api import APIRequestContext, sync_playwright
 
 # Django setup
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -11,7 +12,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
 django.setup()
 
 from django.contrib.auth.models import User
+
 from api.models import Category, Customer, Product
+
 
 @pytest.fixture
 def test_data(db):
@@ -48,6 +51,7 @@ def test_data(db):
         "sub_category": sub_category,
         "products": [product1, product2],
     }
+
 
 @pytest.fixture
 def api_request_context(live_server) -> APIRequestContext:

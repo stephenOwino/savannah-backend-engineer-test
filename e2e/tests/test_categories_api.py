@@ -1,6 +1,8 @@
-import pytest
 import json
+
+import pytest
 from playwright.sync_api import APIRequestContext
+
 
 @pytest.mark.api
 class TestCategoriesAPI:
@@ -18,14 +20,11 @@ class TestCategoriesAPI:
         assert test_data["sub_category"].id in category_ids
 
     def test_create_category(self, api_request_context, live_server, test_data):
-        new_category = {
-            "name": "Laptops",
-            "parent": test_data["root_category"].id
-        }
+        new_category = {"name": "Laptops", "parent": test_data["root_category"].id}
         response = api_request_context.post(
             f"{live_server.url}/api/categories/",
             data=json.dumps(new_category),
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
         assert response.status == 201
         data = response.json()

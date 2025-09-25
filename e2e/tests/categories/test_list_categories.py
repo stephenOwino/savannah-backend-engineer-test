@@ -17,7 +17,9 @@ class TestListCategories:
 
     def test_get_category_detail(self, api_request_context, live_server, test_data):
         root_id = test_data["root_category"].id
-        response = api_request_context.get(f"{live_server.url}/api/categories/{root_id}/")
+        response = api_request_context.get(
+            f"{live_server.url}/api/categories/{root_id}/"
+        )
         assert response.status == 200
         data = response.json()
 
