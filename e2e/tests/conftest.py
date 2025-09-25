@@ -4,7 +4,7 @@ from pathlib import Path
 
 import django
 import pytest
-from playwright.sync_api import APIRequestContext, sync_playwright
+from playwright.sync_api import sync_playwright
 
 # Django setup
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -54,11 +54,11 @@ def test_data(db):
 
 
 @pytest.fixture
-def api_request_context(live_server) -> APIRequestContext:
+def api_request_context(live_server):
     """Provide a Playwright APIRequestContext for each test."""
     with sync_playwright() as p:
         request_context = p.request.new_context(
-            base_url=live_server.url,  # Use live_server.url instead of hardcoded URL
+            base_url=live_server.url,
             extra_http_headers={"Content-Type": "application/json"},
         )
         yield request_context

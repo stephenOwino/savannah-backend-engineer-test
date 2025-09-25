@@ -1,7 +1,6 @@
 import json
 
 import pytest
-from playwright.sync_api import APIRequestContext
 
 
 @pytest.mark.api
@@ -11,6 +10,7 @@ class TestCategoriesAPI:
     def test_list_categories(self, api_request_context, live_server, test_data):
         response = api_request_context.get(f"{live_server.url}/api/categories/")
         assert response.status == 200
+
         data = response.json()
         assert isinstance(data, list)
 
@@ -27,6 +27,7 @@ class TestCategoriesAPI:
             headers={"Content-Type": "application/json"},
         )
         assert response.status == 201
+
         data = response.json()
         assert data["name"] == "Laptops"
         assert data["parent"] == test_data["root_category"].id
