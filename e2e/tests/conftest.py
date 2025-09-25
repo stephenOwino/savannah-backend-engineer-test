@@ -1,5 +1,4 @@
 import pytest
-
 # All imports must be at the top
 from django.contrib.auth.models import User
 from playwright.sync_api import sync_playwright
