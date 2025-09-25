@@ -2,17 +2,14 @@ name: Django CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12", "3.13"]
-
+    
     env:
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_USER: postgres
@@ -26,104 +23,79 @@ jobs:
       PORT: "8888"
 
     services:
-      postgres_db:
-        image: postgres:latest
+      postgres:
+        image: postgres:15
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v3
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.12'
 
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Debug environment variables
-        run: |
-          echo "POSTGRES_DB=$POSTGRES_DB"
-          echo "POSTGRES_USER=$POSTGRES_USER"
-          echo "DB_HOST=$DB_HOST"
-          echo "DB_PORT=$DB_PORT"
-          echo "DJANGO_SUPERUSER_USERNAME=$DJANGO_SUPERUSER_USERNAME"
-          echo "DJANGO_SUPERUSER_EMAIL=$DJANGO_SUPERUSER_EMAIL"
-          if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ] || [ -z "$DJANGO_SUPERUSER_USERNAME" ] || [ -z "$DJANGO_SUPERUSER_EMAIL" ] || [ -z "$DJANGO_SUPERUSER_PASSWORD" ]; then
-            echo "Error: One or more required secrets are unset"
-            exit 1
-          fi
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install coverage
+
+      - name: Lint checks
+        run: |
+          flake8 .
+          black --check .
+          isort . --check-only
 
       - name: Wait for Postgres
         run: |
-          echo "Checking Postgres container status..."
-          docker ps -f "ancestor=postgres:latest"
-          echo "Inspecting Postgres container..."
-          docker inspect $(docker ps -qf "ancestor=postgres:latest") --format '{{.State.Status}}' || echo "No Postgres container found"
-          echo "Testing network connectivity to $DB_HOST:$DB_PORT..."
-          nc -zv $DB_HOST $DB_PORT 2>&1 || echo "Network connection to $DB_HOST:$DB_PORT failed"
-          echo "Waiting 20 seconds for Postgres to initialize..."
-          sleep 20
           for i in {1..30}; do
-            if pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER; then
-              echo "Postgres is ready!"
-              exit 0
-            fi
-            echo "Waiting for Postgres... (attempt $i/30)"
-            pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER 2>&1 || echo "pg_isready failed with exit code $?"
-            sleep 2
+            pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER && break
+            echo "Postgres not ready yet... retrying ($i/30)"
+            sleep 1
           done
-          echo "Error: Postgres not ready after 60 seconds"
-          echo "Postgres container logs:"
-          docker logs $(docker ps -qf "ancestor=postgres:latest") 2>&1 || echo "Failed to retrieve logs"
-          echo "Postgres container status:"
-          docker ps -f "ancestor=postgres:latest"
-          exit 1
+          pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER || exit 1
 
-      - name: Debug Postgres logs if failure
-        if: failure()
-        run: docker logs $(docker ps -qf "ancestor=postgres:latest") 2>&1 || echo "No Postgres container logs available"
-
-      - name: Verify migrate.sh
-        run: |
-          echo "Listing files in working directory..."
-          ls -la
-          echo "Checking migrate.sh permissions..."
-          if [ -f "./migrate.sh" ]; then
-            ls -l ./migrate.sh
-            chmod +x ./migrate.sh
-            echo "migrate.sh found and made executable"
-          else
-            echo "Error: migrate.sh not found in working directory"
-            exit 1
-          fi
+      - name: Install Playwright browsers
+        run: playwright install --with-deps
 
       - name: Run migrations and create superuser
-        run: ./migrate.sh
+        run: |
+          chmod +x ./migrate.sh
+          ./migrate.sh
 
-      - name: Collect static files
-        run: python manage.py collectstatic --noinput
+      - name: Run tests
+        run: pytest -v --tb=short --cov=api --cov-report=xml --cov-report=term-missing
 
-      - name: Lint with flake8
-        run: flake8 .
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: api-tests
+          name: codecov-umbrella
+          fail_ci_if_error: false
 
-      - name: Check formatting with black
-        run: black --check .
-
-      - name: Check imports with isort
-        run: isort . --check-only
+      - name: Generate coverage summary
+        run: |
+          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || echo "Coverage report generation failed" >> $GITHUB_STEP_SUMMARY

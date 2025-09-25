@@ -27,3 +27,11 @@ staticfiles/
 
 # Migrations (optional: keep if stable)
 */migrations/__pycache__/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

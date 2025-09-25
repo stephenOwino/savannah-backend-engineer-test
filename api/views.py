@@ -17,8 +17,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-        # Only show root categories (parent=None).
-        queryset = self.get_queryset().filter(parent=None)
+        # Return ALL categories, not just root categories
+        queryset = self.get_queryset()  # Remove the .filter(parent=None)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 

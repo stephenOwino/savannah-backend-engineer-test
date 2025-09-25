@@ -8,6 +8,8 @@ services:
     image: savannah_assess:v1
     env_file:
       - .env
+    environment:
+      DB_HOST: postgres_db 
     ports:
       - "8888:8888"
     depends_on:
