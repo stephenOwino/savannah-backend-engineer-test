@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head><title>Savannah Assess</title></head>
+<body>
+  <h1>Savannah Assess API</h1>
+  <p>Version: 1.0.0</p>
+  <p>Authenticated: {{ request.user.is_authenticated }}</p>
+  <p>User: {% if request.user.is_authenticated %}{{ request.user.email }}{% else %}Not logged in{% endif %}</p>
+  <ul>
+    <li><a href="/api/categories/">Categories</a></li>
+    <li><a href="/api/products/">Products</a></li>
+    <li><a href="/api/orders/">Orders</a></li>
+    <li><a href="/api/order_form/">Create Order</a></li>
+    <li><a href="/admin/">Admin</a></li>
+    <li><a href="/oidc/authenticate/">Login</a></li>
+  </ul>
+</body>
+</html>

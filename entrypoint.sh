@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Default port
+# Default port from environment, fallback to 8888
 APP_PORT=${PORT:-8888}
 
 cd /app/
@@ -11,8 +11,8 @@ echo "Loading initial data fixtures..."
 python manage.py loaddata api/fixtures/products.json || true
 
 echo "Starting Gunicorn on port ${APP_PORT}..."
-exec gunicorn --worker-tmp-dir /dev/shm \
+exec gunicorn --timeout 90 \
+    --worker-tmp-dir /dev/shm \
     --workers 3 \
     --bind 0.0.0.0:${APP_PORT} \
     savannah_assess.wsgi:application
-

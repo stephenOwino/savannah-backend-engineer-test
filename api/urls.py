@@ -1,7 +1,11 @@
+# Django imports
 from django.urls import include, path
+
+# Third-party imports
 from rest_framework.routers import DefaultRouter
 
-from .views import CategoryViewSet, OrderViewSet, ProductViewSet
+# Local application imports
+from .views import CategoryViewSet, OrderViewSet, ProductViewSet, order_form_view
 
 router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="category")
@@ -10,4 +14,5 @@ router.register(r"orders", OrderViewSet, basename="order")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("order_form/", order_form_view, name="order_form"),
 ]

@@ -1,24 +1,70 @@
-"""
-URL configuration for savannah_assess project.
+# Standard library imports
+import logging
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-
+# Django imports
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
+from django.contrib.auth.decorators import login_required
+
+# Local application imports
+logger = logging.getLogger(__name__)
+
+
+@login_required
+def api_landing(request):
+    """Landing page for authenticated users"""
+    return JsonResponse(
+        {
+            "message": "Welcome to Savannah Assess API",
+            "authenticated": True,
+            "user": {"username": request.user.username, "email": request.user.email},
+            "next_steps": [
+                "View orders at /api/orders/",
+                "Create order at /api/order_form/",
+            ],
+        }
+    )
+
+
+def api_root(request):
+    """API root with basic info"""
+    return JsonResponse(
+        {
+            "message": "Savannah Assess API",
+            "version": "1.0.0",
+            "authenticated": request.user.is_authenticated,
+            "user": (
+                {
+                    "username": request.user.username,
+                    "email": request.user.email,
+                }
+                if request.user.is_authenticated
+                else None
+            ),
+            "endpoints": {
+                "categories": "/api/categories/",
+                "products": "/api/products/",
+                "orders": "/api/orders/",
+                "admin": "/admin/",
+                "order_form": "/api/order_form/",
+            },
+            "auth": {
+                "login": "/oidc/authenticate/",
+                "callback": "/oidc/callback/",
+                "logout": "/oidc/logout/",
+            },
+            "docs": {
+                "description": "Authenticated via OpenID Connect (Auth0). Use Bearer token for APIs.",
+            },
+        }
+    )
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
+    path("oidc/", include("mozilla_django_oidc.urls")),
+    path("", api_root, name="api-root"),
+    path("api/landing/", api_landing, name="api-landing"),
 ]

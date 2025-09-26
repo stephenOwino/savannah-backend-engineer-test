@@ -27,3 +27,5 @@ staticfiles/
 # Git
 .git
 .gitignore
+
+secret.yaml

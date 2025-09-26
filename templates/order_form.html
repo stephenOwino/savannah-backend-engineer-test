@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Create Order</title></head>
+<body>
+  <h1>Create Order</h1>
+  <form action="/api/order_form/" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="products" value='[{"product_id": 1, "quantity": 2}]'>
+    <button type="submit">Submit Order</button>
+  </form>
+  <a href="/">Back</a>
+</body>
+</html>

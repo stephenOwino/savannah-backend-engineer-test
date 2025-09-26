@@ -2,6 +2,8 @@ from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Customer(models.Model):
@@ -11,6 +13,12 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+@receiver(post_save, sender=User)
+def create_customer(sender, instance, created, **kwargs):
+    if created:
+        Customer.objects.create(user=instance, phone_number="", address="")
 
 
 class Category(models.Model):
@@ -24,6 +32,19 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_all_descendant_ids(self):
+        """Get set of all descendant category IDs (handles arbitrary depth, non-recursive)"""
+        descendant_ids = set()
+        to_process = [self]
+        while to_process:
+            current = to_process.pop()
+            children = current.children.all()
+            for child in children:
+                if child.id not in descendant_ids:
+                    descendant_ids.add(child.id)
+                    to_process.append(child)
+        return descendant_ids | {self.id}  # Include self
 
 
 class Product(models.Model):

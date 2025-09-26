@@ -9,13 +9,19 @@ services:
     env_file:
       - .env
     environment:
-      DB_HOST: postgres_db 
+      DB_HOST: postgres_db
+      PORT: 8888  
     ports:
       - "8888:8888"
     depends_on:
       - postgres_db
     restart: always
     command: sh -c "/app/migrate.sh && /app/entrypoint.sh"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
   postgres_db:
     image: postgres:latest

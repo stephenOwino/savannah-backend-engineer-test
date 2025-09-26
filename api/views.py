@@ -1,51 +1,66 @@
+# Standard library imports
+import json
+import logging
+
+# Django imports
 from django.db import transaction
 from django.db.models import Avg
-from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+
+# Third-party imports
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+# Local application imports
 from . import notifications
 from .models import Category, Customer, Order, OrderItem, Product
+from .permissions import IsCustomerOrReadOnly, IsOwnerOrReadOnly
 from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    Categories API:
+    - Public read access (anyone can view categories)
+    - Write access requires customer authentication
+    """
+
     queryset = Category.objects.all().order_by("name")
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsCustomerOrReadOnly]
 
-    def list(self, request, *args, **kwargs):
-        # Return ALL categories, not just root categories
-        queryset = self.get_queryset()  # Remove the .filter(parent=None)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get"], permission_classes=[AllowAny])
     def average_price(self, request, pk=None):
-        # Return the average price for all products in a category (including children).
+        """Calculate average price for products in this category (including all descendant categories)"""
         category = self.get_object()
-        descendant_ids = [category.id] + list(
-            category.children.values_list("id", flat=True)
-        )
-
-        result = (
+        descendant_ids = category.get_all_descendant_ids()
+        avg_price = (
             Product.objects.filter(category__id__in=descendant_ids)
             .aggregate(average_price=Avg("price"))
             .get("average_price")
         )
-
-        return Response({"average_price": result or 0})
+        return Response(
+            {"category": category.name, "average_price": float(avg_price or 0)}
+        )
 
 
 class ProductViewSet(viewsets.ModelViewSet):
+    """
+    Products API:
+    - Public read access (anyone can view products)
+    - Write access requires customer authentication
+    """
+
     queryset = Product.objects.all().order_by("name")
     serializer_class = ProductSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsCustomerOrReadOnly]
 
     def get_queryset(self):
-        # Filter products by category if ?category=<id> is provided.
+        """Filter products by category if requested"""
         queryset = super().get_queryset()
         category_id = self.request.query_params.get("category")
         if category_id:
@@ -54,140 +69,106 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
+    """
+    Orders API:
+    - Requires authentication
+    - Users can only access their own orders
+    - Automatic stock management and notifications
+    """
+
     queryset = Order.objects.all().order_by("-created_at")
     serializer_class = OrderSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_customer(self, user):
-        if not user or user.is_anonymous:
-            return Customer.objects.first()
-        return get_object_or_404(Customer, user=user)
+        """Get or create customer profile for authenticated user"""
+        customer, created = Customer.objects.get_or_create(
+            user=user, defaults={"phone_number": "", "address": ""}
+        )
+        return customer
 
     def get_queryset(self):
+        """Return only orders belonging to the authenticated user"""
         if self.request.user.is_anonymous:
-            return self.queryset
+            return Order.objects.none()
         customer = self.get_customer(self.request.user)
         return self.queryset.filter(customer=customer)
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         """
-        Create an order:
-        - Validate stock
-        - Deduct stock
-        - Save items + total
-        - Trigger notifications
+        Create order with stock validation and notifications.
+        Process:
+        1. Validate request data
+        2. Check product availability and stock
+        3. Create order and order items
+        4. Update product stock
+        5. Send notifications
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         products_data = serializer.validated_data.get("products", [])
         if not products_data:
             return Response(
                 {"error": "Order must contain at least one product."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         customer = self.get_customer(request.user)
-
-        # Preload all products to reduce queries
         product_ids = [item["product_id"] for item in products_data]
         products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
-
-        # 1. Validate stock
         for item in products_data:
-            product = products.get(item["product_id"])
+            product_id = item["product_id"]
+            quantity = item["quantity"]
+            product = products.get(product_id)
             if not product:
                 return Response(
-                    {"error": f"Product with id {item['product_id']} not found."},
+                    {"error": f"Product with ID {product_id} not found."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if not product.has_sufficient_stock(item["quantity"]):
+            if not product.has_sufficient_stock(quantity):
                 return Response(
                     {
                         "error": f"Insufficient stock for {product.name}. "
-                        f"Available: {product.stock}"
+                        f"Requested: {quantity}, Available: {product.stock}"
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-
-        # 2. Create order
         order = Order.objects.create(customer=customer)
-
-        total = 0
         for item in products_data:
             product = products[item["product_id"]]
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=item["quantity"],
-            )
-            product.stock -= item["quantity"]
+            quantity = item["quantity"]
+            OrderItem.objects.create(order=order, product=product, quantity=quantity)
+            product.stock -= quantity
             product.save()
-            total += product.price * item["quantity"]
-
-        # 3. Save total
-        order.total_amount = total
-        order.save()
-
-        # 4. Notifications (can be async)
-        notifications.send_order_confirmation_sms(order)
-        notifications.send_new_order_admin_email(order)
-
-        # 5. Return created order
+        order.update_total_amount()
+        try:
+            notifications.send_order_confirmation_sms(order)
+            notifications.send_new_order_admin_email(order)
+        except Exception as e:
+            logger.warning(f"Notification failed for order {order.id}: {e}")
         response_serializer = self.get_serializer(order)
         headers = self.get_success_headers(response_serializer.data)
         return Response(
             response_serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
 
-    @transaction.atomic
-    def update(self, request, *args, **kwargs):
-        # Update an order:
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        products_data = serializer.validated_data.pop("products", None)
-
-        # Update base fields
-        for attr, value in serializer.validated_data.items():
-            setattr(instance, attr, value)
-
-        if products_data is not None:
-            # Restore stock from old items
-            for item in instance.items.all():
-                item.product.stock += item.quantity
-                item.product.save()
-            instance.items.all().delete()
-
-            # Preload new products
-            product_ids = [item["product_id"] for item in products_data]
-            products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
-
-            total = 0
-            for item in products_data:
-                product = products[item["product_id"]]
-                if not product.has_sufficient_stock(item["quantity"]):
-                    return Response(
-                        {
-                            "error": f"Insufficient stock for {product.name}. "
-                            f"Available: {product.stock}"
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                OrderItem.objects.create(
-                    order=instance,
-                    product=product,
-                    quantity=item["quantity"],
-                )
-                product.stock -= item["quantity"]
-                product.save()
-                total += product.price * item["quantity"]
-
-            instance.total_amount = total
-
-        instance.save()
-        return Response(self.get_serializer(instance).data)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@csrf_exempt  # For demo simplicity; remove in production with proper CSRF
+def order_form_view(request):
+    """Handle order creation via a simple form submission"""
+    if request.method == "POST":
+        products_data = request.POST.get("products")
+        try:
+            products = json.loads(products_data)
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid JSON data for products"}, status=400)
+        serializer = OrderSerializer(
+            data={"products": products}, context={"request": request}
+        )
+        if serializer.is_valid():
+            serializer.save(customer=request.user.customer)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    return Response({"error": "Method not allowed"}, status=405)
