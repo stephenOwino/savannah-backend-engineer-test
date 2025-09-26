@@ -3,9 +3,9 @@ import logging
 
 # Django imports
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.urls import include, path
-from django.contrib.auth.decorators import login_required
 
 # Local application imports
 logger = logging.getLogger(__name__)
