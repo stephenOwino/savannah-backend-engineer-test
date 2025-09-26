@@ -136,7 +136,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-OIDC_OP_DOMAIN = config("OIDC_OP_DOMAIN")
+OIDC_OP_DOMAIN = config("OIDC_OP_DOMAIN", default="dev-u7tcvwcdk05v8p33.us.auth0.com")
 OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID")
 OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET")
 
