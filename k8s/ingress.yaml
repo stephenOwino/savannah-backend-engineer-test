@@ -17,7 +17,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: django-app-service
+                name: savannah-app-service
                 port:
                   number: 8888
   # Optional: TLS configuration

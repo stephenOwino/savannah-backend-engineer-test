@@ -17,8 +17,8 @@ spec:
     spec:
       initContainers:
         - name: migrate
-          image: tlipgtsc/savannah_assess:v2
-          command: ["/app/api/migrate.sh"]
+          image: otizaaa/savannah_assess:v3
+          command: ["/app/migrate.sh"]
           envFrom:
             - configMapRef:
                 name: savannah-assess-config
@@ -37,7 +37,7 @@ spec:
                   key: DJANGO_SECRET_KEY
       containers:
         - name: django-app
-          image: tlipgtsc/savannah_assess:v2
+          image: otizaaa/savannah_assess:v3
           ports:
             - containerPort: 8888
           envFrom:

@@ -3,7 +3,7 @@ kind: PersistentVolume
 metadata:
   name: postgres-pv
   labels:
-    app: postgres
+    app: savannah-app-postgres
 spec:
   capacity:
     storage: 10Gi
