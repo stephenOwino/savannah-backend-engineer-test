@@ -1,7 +1,7 @@
 import pytest
 
 from api.serializers import CategorySerializer, OrderItemWriteSerializer, ProductSerializer
-from tests.factories.factories import CategoryFactory
+from tests.factories import CategoryFactory
 
 
 @pytest.mark.django_db
@@ -18,11 +18,27 @@ def test_category_serializer_children():
 def test_product_serializer_validation():
     category = CategoryFactory()
     # Valid product
-    serializer = ProductSerializer(data={"name": "Book", "description": "desc", "price": 10, "category": category.id, "stock": 5})
+    serializer = ProductSerializer(
+        data={
+            "name": "Book",
+            "description": "desc",
+            "price": 10,
+            "category": category.id,
+            "stock": 5,
+        }
+    )
     assert serializer.is_valid()
 
     # Invalid product with price 0
-    serializer2 = ProductSerializer(data={"name": "Book", "description": "desc", "price": 0, "category": category.id, "stock": 5})
+    serializer2 = ProductSerializer(
+        data={
+            "name": "Book",
+            "description": "desc",
+            "price": 0,
+            "category": category.id,
+            "stock": 5,
+        }
+    )
     assert not serializer2.is_valid()
     assert "Price must be greater than zero." in str(serializer2.errors)
 
