@@ -1,11 +1,10 @@
-# api/tests/unit/test_models.py
+# tests/unit/test_models.py
 from decimal import Decimal
 
 import pytest
 
 from api.models import Customer
-
-from ..factories import OrderItemFactory, ProductFactory, UserFactory
+from tests.factories.factories import OrderItemFactory, ProductFactory, UserFactory
 
 
 @pytest.mark.django_db

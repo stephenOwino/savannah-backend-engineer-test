@@ -1,8 +1,8 @@
-# api/tests/integration/test_urls.py
+# tests/integration/test_urls.py
 import pytest
 from django.urls import reverse
 
-from ..factories import UserFactory
+from tests.factories.factories import UserFactory 
 
 
 @pytest.mark.django_db
