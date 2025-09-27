@@ -4,17 +4,16 @@ from pathlib import Path
 
 import django  # Import Django but don’t setup yet
 import pytest
+# Now import Django models
+from django.contrib.auth.models import User
 from playwright.sync_api import sync_playwright
+
+from api.models import Category, Customer, Product
 
 # Django environment setup
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
-django.setup()  # Now safe to import models
-
-# Now import Django models
-from django.contrib.auth.models import User
-
-from api.models import Category, Customer, Product
+django.setup()  #safe to import models
 
 
 @pytest.fixture
