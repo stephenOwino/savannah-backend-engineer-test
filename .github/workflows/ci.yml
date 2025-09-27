@@ -21,8 +21,6 @@ jobs:
       DJANGO_SUPERUSER_PASSWORD: ${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
       DEBUG: "False"
       PORT: "8888"
-
-      # OIDC (Auth0) secrets
       OIDC_OP_DOMAIN: ${{ secrets.OIDC_OP_DOMAIN }}
       OIDC_RP_CLIENT_ID: ${{ secrets.OIDC_RP_CLIENT_ID }}
       OIDC_RP_CLIENT_SECRET: ${{ secrets.OIDC_RP_CLIENT_SECRET }}
@@ -62,14 +60,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage
 
       - name: Lint checks
         run: |
           flake8 .
           black --check . --config pyproject.toml
           isort . --check-only --settings-path pyproject.toml
-
 
       - name: Wait for Postgres
         run: |
@@ -78,18 +74,26 @@ jobs:
             echo "Postgres not ready yet... retrying ($i/30)"
             sleep 1
           done
-          pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER || exit 1
-
-      - name: Install Playwright browsers
-        run: playwright install --with-deps
 
       - name: Run migrations and create superuser
         run: |
           chmod +x ./migrate.sh
           ./migrate.sh
 
-      - name: Run tests
-        run: pytest -v --tb=short --cov=api --cov-report=xml --cov-report=term-missing
+      # Run unit/API tests first (faster feedback)
+      - name: Run unit and API tests
+        run: pytest -v --tb=short --cov=api --cov-report=xml --cov-report=term-missing -m "not e2e"
+
+      # Install Playwright only for E2E tests
+      - name: Install Playwright browsers
+        run: playwright install --with-deps chromium
+
+      # Run E2E tests separately
+      - name: Run E2E tests
+        run: pytest --e2e -m e2e -v --tb=short
+        env:
+          # Run headless in CI
+          PLAYWRIGHT_BROWSERS_PATH: 0
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -108,7 +112,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    needs: test   #only build/push if tests pass
+    needs: test
     steps:
       - uses: actions/checkout@v4
 

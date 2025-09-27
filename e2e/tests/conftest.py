@@ -1,162 +1,126 @@
-import os
-import sys
-from pathlib import Path
-
-import django
+# conftest.py
 import pytest
+from _pytest.config import Config
+from _pytest.config.argparsing import Parser
+from _pytest.fixtures import FixtureRequest
+from django.conf import LazySettings
 from django.contrib.auth.models import User
+from playwright.sync_api import APIRequestContext, Playwright
+from pytest_django.live_server_helper import LiveServer
+from pytest_django.plugin import Blocker
+
 
 from api.models import Category, Customer, Order, OrderItem, Product
 
-# Django environment setup
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
-django.setup()
+# --- Pytest Hooks and Configuration ---
 
 
-# Configure pytest for E2E vs regular tests
-def pytest_addoption(parser):
+def pytest_addoption(parser: Parser) -> None:
+    """Adds custom command-line options to pytest."""
     parser.addoption(
         "--e2e",
         action="store_true",
         default=False,
-        help="Enable when running e2e tests",
+        help="Enable when running end-to-end tests.",
     )
 
 
-def determine_django_db_setup_scope(fixture_name, config):
+def determine_django_db_setup_scope(fixture_name: str, config: Config) -> str:
     """
-    E2E tests use the live_server fixture, which will wipe
-    the db after each test run, which conflicts with a
-    session scoped db setup.
-    Therefore, we use a function scoped db setup for e2e tests.
+    Dynamically set the database fixture scope.
+
+    End-to-end tests use the `live_server` fixture, which conflicts with
+    a session-scoped database setup. Therefore, we switch to a 'function'
+    scope when the --e2e flag is present.
     """
-    if config.getoption("--e2e"):
-        return "function"
-    return "session"
+    return "function" if config.getoption("--e2e") else "session"
 
 
 @pytest.fixture(scope=determine_django_db_setup_scope)
-def django_db_setup(django_db_setup, django_db_blocker):
-    """Custom database setup that handles E2E vs regular tests."""
+def django_db_setup(django_db_setup: FixtureRequest, django_db_blocker: "Blocker") -> None:
+    """Custom database setup that handles E2E vs. regular test scopes."""
     pass
 
 
-# Custom live server fixture with proper static assets
-@pytest.fixture
-def my_live_server(live_server, settings):
+# --- Core Test Fixtures ---
+
+
+@pytest.fixture(scope="function")
+def my_live_server(live_server: LiveServer, settings: LazySettings) -> LiveServer:
     """
-    Customized live_server fixture that configures STATIC_URL to point to the live server URL.
+    Customizes the `live_server` fixture to configure STATIC_URL,
+    ensuring static assets are served correctly during E2E tests.
     """
-    settings.STATIC_URL = live_server.url + "/static/"
-    yield live_server
+    settings.STATIC_URL = f"{live_server.url}/static/"
+    return live_server
 
 
-@pytest.fixture
-def test_data(db) -> dict:
-    """Create initial test data - works with live_server."""
-    user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
-
-    customer = Customer.objects.create(
-        user=user,
-        phone_number="+254700123456",
-        address="123 Test Street, Nairobi",
-    )
-
-    root_category = Category.objects.create(name="Electronics")
-    sub_category = Category.objects.create(name="Smartphones", parent=root_category)
-
-    product1 = Product.objects.create(
-        name="iPhone 14",
-        description="Latest iPhone model",
-        price=99999.00,
-        category=sub_category,
-        stock=10,
-    )
-
-    product2 = Product.objects.create(
-        name="Samsung Galaxy S23",
-        description="Latest Samsung model",
-        price=89999.00,
-        category=sub_category,
-        stock=5,
-    )
-
-    return {
-        "user": user,
-        "customer": customer,
-        "root_category": root_category,
-        "sub_category": sub_category,
-        "products": [product1, product2],
-    }
+@pytest.fixture(scope="function")
+def shared_category(db: None) -> Category:
+    """Creates a single, shared category to reduce database writes in tests."""
+    return Category.objects.create(name="Shared Testing Category")
 
 
-@pytest.fixture
-def shared_category(db) -> Category:
-    """Create a shared category to reduce DB writes."""
-    return Category.objects.create(name="Shared Category")
+# --- Data Creation Fixtures ---
 
 
-@pytest.fixture
-def sample_product(db, shared_category) -> dict:
-    """Create a sample product for testing."""
-    user = User.objects.create_user(username="sampleuser", email="sample@example.com", password="testpass123")
-    customer = Customer.objects.create(
-        user=user,
-        phone_number="+254700123457",
+@pytest.fixture(scope="function")
+def sample_user(db: None) -> User:
+    """Creates a standard user for tests."""
+    return User.objects.create_user(username="sampleuser", email="sample@example.com", password="testpassword123")
+
+
+@pytest.fixture(scope="function")
+def sample_customer(db: None, sample_user: User) -> Customer:
+    """Creates a customer profile linked to a user."""
+    return Customer.objects.create(
+        user=sample_user,
+        phone_number="+254712345678",
         address="456 Test Avenue, Nairobi",
     )
 
-    product = Product.objects.create(
+
+@pytest.fixture(scope="function")
+def sample_product(db: None, shared_category: Category) -> Product:
+    """Creates a standard product for tests."""
+    return Product.objects.create(
         name="Sample Product",
-        description="A sample product",
-        price=1000.00,
+        description="A product for testing purposes.",
+        price=1500.00,
         category=shared_category,
         stock=50,
     )
 
-    return {"id": product.id, "product": product, "category": shared_category, "customer": customer, "user": user}
 
-
-@pytest.fixture
-def another_product(db, shared_category) -> dict:
-    """Create another product for testing."""
-    product = Product.objects.create(
+@pytest.fixture(scope="function")
+def another_product(db: None, shared_category: Category) -> Product:
+    """Creates a second, distinct product for tests."""
+    return Product.objects.create(
         name="Another Test Product",
-        description="Another test product",
-        price=2000.00,
+        description="Another product for complex scenarios.",
+        price=2500.00,
         category=shared_category,
         stock=25,
     )
 
-    return {
-        "id": product.id,
-        "product": product,
-        "category": shared_category,
-    }
 
-
-@pytest.fixture
-def sample_order(db, sample_product) -> dict:
-    """Create a sample order for testing."""
-    order = Order.objects.create(customer=sample_product["customer"])
-
-    order_item = OrderItem.objects.create(order=order, product=sample_product["product"], quantity=2)
-
+@pytest.fixture(scope="function")
+def sample_order(db: None, sample_customer: Customer, sample_product: Product) -> Order:
+    """Creates a sample order with one item."""
+    order = Order.objects.create(customer=sample_customer)
+    OrderItem.objects.create(order=order, product=sample_product, quantity=2)
     order.update_total_amount()
-
-    return {
-        "order": order,
-        "order_item": order_item,
-        "product": sample_product["product"],
-        "customer": sample_product["customer"],
-    }
+    return order
 
 
-# Playwright fixtures for API testing - Using built-in fixtures properly
-@pytest.fixture
-def api_request_context(my_live_server, playwright):
-    """Provide a Playwright APIRequestContext for API testing."""
+# --- Playwright and API Testing Fixtures ---
+
+
+@pytest.fixture(scope="function")
+def api_request_context(my_live_server: LiveServer, playwright: Playwright) -> APIRequestContext:
+    """
+    Provides a Playwright APIRequestContext for efficient and reliable API testing.
+    """
     request_context = playwright.request.new_context(
         base_url=my_live_server.url,
         extra_http_headers={"Content-Type": "application/json"},
@@ -165,9 +129,9 @@ def api_request_context(my_live_server, playwright):
     request_context.dispose()
 
 
-@pytest.fixture
-def browser_context_args(browser_context_args):
-    """Override browser context options."""
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args: dict) -> dict:
+    """Overrides default Playwright browser context options for all tests."""
     return {
         **browser_context_args,
         "ignore_https_errors": True,
