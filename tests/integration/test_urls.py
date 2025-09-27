@@ -2,8 +2,8 @@
 import pytest
 from django.urls import reverse
 
-from tests.factories import UserFactory
 
+from tests.factories.factories import UserFactory
 
 @pytest.mark.django_db
 def test_api_root(client):

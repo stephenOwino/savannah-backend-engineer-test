@@ -4,7 +4,9 @@ from decimal import Decimal
 import pytest
 
 from api.models import Customer
-from tests.factories import OrderItemFactory, ProductFactory, UserFactory
+from tests.factories.factories import UserFactory
+from tests.factories.factories import ProductFactory, OrderItemFactory
+
 
 
 @pytest.mark.django_db
