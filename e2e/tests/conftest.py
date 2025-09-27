@@ -9,7 +9,6 @@ from playwright.sync_api import APIRequestContext, Playwright
 from pytest_django.live_server_helper import LiveServer
 from pytest_django.plugin import Blocker
 
-
 from api.models import Category, Customer, Order, OrderItem, Product
 
 # --- Pytest Hooks and Configuration ---
