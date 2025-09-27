@@ -4,7 +4,6 @@ from api.serializers import CategorySerializer, OrderItemWriteSerializer, Produc
 from tests.factories.factories import CategoryFactory
 
 
-
 @pytest.mark.django_db
 def test_category_serializer_children():
     parent = CategoryFactory()
