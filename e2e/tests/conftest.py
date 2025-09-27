@@ -7,7 +7,6 @@ from django.conf import LazySettings
 from django.contrib.auth.models import User
 from playwright.sync_api import APIRequestContext, Playwright
 from pytest_django.live_server_helper import LiveServer
-from pytest_django.plugin import Blocker
 
 from api.models import Category, Customer, Order, OrderItem, Product
 
@@ -36,8 +35,9 @@ def determine_django_db_setup_scope(fixture_name: str, config: Config) -> str:
 
 
 @pytest.fixture(scope=determine_django_db_setup_scope)
-def django_db_setup(django_db_setup: FixtureRequest, django_db_blocker: "Blocker") -> None:
+def django_db_setup(django_db_setup: FixtureRequest, django_db_blocker) -> None:
     """Custom database setup that handles E2E vs. regular test scopes."""
+    # Keep this empty unless you need special DB init logic
     pass
 
 
