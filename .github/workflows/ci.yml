@@ -22,6 +22,11 @@ jobs:
       DEBUG: "False"
       PORT: "8888"
 
+      # OIDC (Auth0) secrets
+      OIDC_OP_DOMAIN: ${{ secrets.OIDC_OP_DOMAIN }}
+      OIDC_RP_CLIENT_ID: ${{ secrets.OIDC_RP_CLIENT_ID }}
+      OIDC_RP_CLIENT_SECRET: ${{ secrets.OIDC_RP_CLIENT_SECRET }}
+
     services:
       postgres:
         image: postgres:15
@@ -122,4 +127,3 @@ jobs:
           push: true
           tags: |
             otizaaa/savannah_assess:v2
-            otizaaa/savannah_assess:latest
