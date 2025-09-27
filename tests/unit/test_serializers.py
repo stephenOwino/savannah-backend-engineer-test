@@ -1,7 +1,8 @@
 import pytest
 
 from api.serializers import CategorySerializer, OrderItemWriteSerializer, ProductSerializer
-from tests.factories import CategoryFactory
+from tests.factories.factories import CategoryFactory
+
 
 
 @pytest.mark.django_db
