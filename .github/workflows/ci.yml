@@ -90,7 +90,7 @@ jobs:
 
       # Run E2E tests separately
       - name: Run E2E tests
-        run: pytest --e2e -m e2e -v --tb=short
+        run: pytest -m e2e -v --tb=short
         env:
           # Run headless in CI
           PLAYWRIGHT_BROWSERS_PATH: 0
