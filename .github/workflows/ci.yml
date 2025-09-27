@@ -62,8 +62,9 @@ jobs:
       - name: Lint checks
         run: |
           flake8 .
-          black --check .
-          isort . --check-only
+          black --check . --config pyproject.toml
+          isort . --check-only --settings-path pyproject.toml
+
 
       - name: Wait for Postgres
         run: |

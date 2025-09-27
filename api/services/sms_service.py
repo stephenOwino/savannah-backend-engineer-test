@@ -30,9 +30,7 @@ class SMSService:
             except africastalking.Service.AfricasTalkingException as e:
                 # Handle the specific WhatsApp sandbox error
                 if "Sandbox is currently not available for this service" in str(e):
-                    logger.warning(
-                        "WhatsApp sandbox not available, but SMS should still work"
-                    )
+                    logger.warning("WhatsApp sandbox not available, but SMS should still work")
                     # Try to get SMS service anyway - it might still be available
                     try:
                         self._sms = africastalking.SMS
@@ -83,10 +81,7 @@ class SMSService:
                 "message": message,
                 "SMSMessageData": {
                     "Message": "Simulated SMS sent successfully",
-                    "Recipients": [
-                        {"number": num, "status": "Success", "cost": "KES 0.8000"}
-                        for num in validated_recipients
-                    ],
+                    "Recipients": [{"number": num, "status": "Success", "cost": "KES 0.8000"} for num in validated_recipients],
                 },
             }
 

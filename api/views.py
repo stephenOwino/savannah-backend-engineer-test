@@ -6,6 +6,7 @@ import logging
 from django.db import transaction
 from django.db.models import Avg
 from django.views.decorators.csrf import csrf_exempt
+
 # Third-party imports
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -38,13 +39,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
         category = self.get_object()
         descendant_ids = category.get_all_descendant_ids()
         avg_price = (
-            Product.objects.filter(category__id__in=descendant_ids)
-            .aggregate(average_price=Avg("price"))
-            .get("average_price")
+            Product.objects.filter(category__id__in=descendant_ids).aggregate(average_price=Avg("price")).get("average_price")
         )
-        return Response(
-            {"category": category.name, "average_price": float(avg_price or 0)}
-        )
+        return Response({"category": category.name, "average_price": float(avg_price or 0)})
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -81,9 +78,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def get_customer(self, user):
         """Get or create customer profile for authenticated user"""
-        customer, created = Customer.objects.get_or_create(
-            user=user, defaults={"phone_number": "", "address": ""}
-        )
+        customer, created = Customer.objects.get_or_create(user=user, defaults={"phone_number": "", "address": ""})
         return customer
 
     def get_queryset(self):
@@ -126,10 +121,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 )
             if not product.has_sufficient_stock(quantity):
                 return Response(
-                    {
-                        "error": f"Insufficient stock for {product.name}. "
-                        f"Requested: {quantity}, Available: {product.stock}"
-                    },
+                    {"error": f"Insufficient stock for {product.name}. " f"Requested: {quantity}, Available: {product.stock}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         order = Order.objects.create(customer=customer)
@@ -147,9 +139,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             logger.warning(f"Notification failed for order {order.id}: {e}")
         response_serializer = self.get_serializer(order)
         headers = self.get_success_headers(response_serializer.data)
-        return Response(
-            response_serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 @api_view(["POST"])
@@ -163,9 +153,7 @@ def order_form_view(request):
             products = json.loads(products_data)
         except json.JSONDecodeError:
             return Response({"error": "Invalid JSON data for products"}, status=400)
-        serializer = OrderSerializer(
-            data={"products": products}, context={"request": request}
-        )
+        serializer = OrderSerializer(data={"products": products}, context={"request": request})
         if serializer.is_valid():
             serializer.save(customer=request.user.customer)
             return Response(serializer.data, status=201)

@@ -14,9 +14,7 @@ class TestCategoryValidations:
             ({"parent": 9999, "name": "Invalid Parent"}, 400),  # Bad parent
         ],
     )
-    def test_invalid_payloads(
-        self, api_request_context, live_server, payload, expected_status
-    ):
+    def test_invalid_payloads(self, api_request_context, live_server, payload, expected_status):
         resp = api_request_context.post(
             f"{live_server.url}/api/categories/",
             data=json.dumps(payload),

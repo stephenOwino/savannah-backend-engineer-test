@@ -80,9 +80,7 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "customer",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="api.customer"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="api.customer"),
                 ),
             ],
         ),
@@ -127,15 +125,11 @@ class Migration(migrations.Migration):
                 ("quantity", models.PositiveIntegerField(default=1)),
                 (
                     "order",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="api.order"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="api.order"),
                 ),
                 (
                     "product",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="api.product"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="api.product"),
                 ),
             ],
         ),

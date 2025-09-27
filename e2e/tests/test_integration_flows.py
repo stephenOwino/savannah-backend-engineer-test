@@ -37,9 +37,7 @@ class TestIntegrationFlows:
         product_id = prod_resp.json()["id"]
 
         # Place order - Fixed to match OrderSerializer structure
-        order_data = {
-            "products": [{"product_id": product_id, "quantity": 2}]  # Correct structure
-        }
+        order_data = {"products": [{"product_id": product_id, "quantity": 2}]}  # Correct structure
         order_resp = api_request_context.post(
             f"{live_server.url}/api/orders/",
             data=json.dumps(order_data),
@@ -49,9 +47,7 @@ class TestIntegrationFlows:
         assert "created_at" in order_json
         assert order_json["customer"] == test_data["customer"].id
 
-    def test_inventory_management_flow(
-        self, api_request_context, test_data, live_server
-    ):
+    def test_inventory_management_flow(self, api_request_context, test_data, live_server):
         product = test_data["products"][0]
         # Correct field name is "stock" (from your Product model)
         update_data = {"stock": 20}
@@ -62,9 +58,7 @@ class TestIntegrationFlows:
         assert resp.status == 200
         assert resp.json()["stock"] == 20
 
-    def test_category_hierarchy_with_pricing(
-        self, api_request_context, test_data, live_server
-    ):
+    def test_category_hierarchy_with_pricing(self, api_request_context, test_data, live_server):
         resp = api_request_context.get(f"{live_server.url}/api/categories/")
         assert resp.status == 200
         categories = resp.json()

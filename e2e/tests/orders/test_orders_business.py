@@ -4,9 +4,7 @@ from playwright.sync_api import APIRequestContext, expect
 pytestmark = pytest.mark.order
 
 
-def test_order_total_amount_calculation(
-    api_request_context: APIRequestContext, sample_product
-):
+def test_order_total_amount_calculation(api_request_context: APIRequestContext, sample_product):
     payload = {"items": [{"product": sample_product["id"], "quantity": 3}]}
     response = api_request_context.post("/api/orders/", data=payload)
     expect(response).to_be_ok()

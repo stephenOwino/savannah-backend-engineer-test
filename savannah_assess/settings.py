@@ -81,9 +81,7 @@ DATABASES = {
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -116,9 +114,7 @@ AFRICASTALKING_USERNAME = config("AFRICASTALKING_USERNAME", default="sandbox")
 AFRICASTALKING_API_KEY = config("AFRICASTALKING_API_KEY", default=None)
 AFRICASTALKING_SENDER_ID = config("AFRICASTALKING_SENDER_ID", default="")
 ADMIN_EMAIL = config("ADMIN_EMAIL", default="stephenowin233@gmail.com")
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
-)
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 
 # Internationalization
 LANGUAGE_CODE = "en-us"

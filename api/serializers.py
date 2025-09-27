@@ -66,9 +66,7 @@ class OrderItemWriteSerializer(serializers.Serializer):
 class OrderSerializer(serializers.ModelSerializer):
     # For reading order details
     items = OrderItemReadSerializer(source="orderitem_set", many=True, read_only=True)
-    customer_name = serializers.CharField(
-        source="customer.user.username", read_only=True
-    )
+    customer_name = serializers.CharField(source="customer.user.username", read_only=True)
 
     # For creating an order
     products = OrderItemWriteSerializer(many=True, write_only=True)

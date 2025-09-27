@@ -28,9 +28,7 @@ class TestOrdersAPI:
         assert data["customer"] == test_data["customer"].id
         assert "created_at" in data
 
-    def test_create_order_insufficient_stock(
-        self, api_request_context, test_data, live_server
-    ):
+    def test_create_order_insufficient_stock(self, api_request_context, test_data, live_server):
         product1 = test_data["products"][0]
         order_data = {"products": [{"product_id": product1.id, "quantity": 1000}]}
         response = api_request_context.post(
@@ -40,9 +38,7 @@ class TestOrdersAPI:
         )
         assert response.status == 400
 
-    def test_create_order_invalid_quantity(
-        self, api_request_context, test_data, live_server
-    ):
+    def test_create_order_invalid_quantity(self, api_request_context, test_data, live_server):
         product1 = test_data["products"][0]
         order_data = {"products": [{"product_id": product1.id, "quantity": 0}]}
         response = api_request_context.post(

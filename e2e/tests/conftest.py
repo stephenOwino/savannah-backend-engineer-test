@@ -4,6 +4,7 @@ from pathlib import Path
 
 import django  # Import Django but don’t setup yet
 import pytest
+
 # Now import Django models
 from django.contrib.auth.models import User
 from playwright.sync_api import sync_playwright
@@ -19,9 +20,7 @@ django.setup()  # safe to import models
 @pytest.fixture
 def test_data(db):
     """Create initial test data."""
-    user = User.objects.create_user(
-        username="testuser", email="test@example.com", password="testpass123"
-    )
+    user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
     customer = Customer.objects.create(
         user=user,
         phone_number="+254700123456",
