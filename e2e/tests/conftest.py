@@ -13,7 +13,7 @@ from api.models import Category, Customer, Product
 # Django environment setup
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
-django.setup()  #safe to import models
+django.setup()  # safe to import models
 
 
 @pytest.fixture
