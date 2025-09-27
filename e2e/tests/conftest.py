@@ -55,11 +55,7 @@ def my_live_server(live_server, settings):
 @pytest.fixture
 def test_data(db) -> dict:
     """Create initial test data - works with live_server."""
-    user = User.objects.create_user(
-        username="testuser",
-        email="test@example.com",
-        password="testpass123"
-    )
+    user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
 
     customer = Customer.objects.create(
         user=user,
@@ -68,10 +64,7 @@ def test_data(db) -> dict:
     )
 
     root_category = Category.objects.create(name="Electronics")
-    sub_category = Category.objects.create(
-        name="Smartphones",
-        parent=root_category
-    )
+    sub_category = Category.objects.create(name="Smartphones", parent=root_category)
 
     product1 = Product.objects.create(
         name="iPhone 14",
@@ -107,11 +100,7 @@ def shared_category(db) -> Category:
 @pytest.fixture
 def sample_product(db, shared_category) -> dict:
     """Create a sample product for testing."""
-    user = User.objects.create_user(
-        username="sampleuser",
-        email="sample@example.com",
-        password="testpass123"
-    )
+    user = User.objects.create_user(username="sampleuser", email="sample@example.com", password="testpass123")
     customer = Customer.objects.create(
         user=user,
         phone_number="+254700123457",
@@ -126,13 +115,7 @@ def sample_product(db, shared_category) -> dict:
         stock=50,
     )
 
-    return {
-        "id": product.id,
-        "product": product,
-        "category": shared_category,
-        "customer": customer,
-        "user": user
-    }
+    return {"id": product.id, "product": product, "category": shared_category, "customer": customer, "user": user}
 
 
 @pytest.fixture
@@ -156,15 +139,9 @@ def another_product(db, shared_category) -> dict:
 @pytest.fixture
 def sample_order(db, sample_product) -> dict:
     """Create a sample order for testing."""
-    order = Order.objects.create(
-        customer=sample_product["customer"]
-    )
+    order = Order.objects.create(customer=sample_product["customer"])
 
-    order_item = OrderItem.objects.create(
-        order=order,
-        product=sample_product["product"],
-        quantity=2
-    )
+    order_item = OrderItem.objects.create(order=order, product=sample_product["product"], quantity=2)
 
     order.update_total_amount()
 
@@ -172,7 +149,7 @@ def sample_order(db, sample_product) -> dict:
         "order": order,
         "order_item": order_item,
         "product": sample_product["product"],
-        "customer": sample_product["customer"]
+        "customer": sample_product["customer"],
     }
 
 
