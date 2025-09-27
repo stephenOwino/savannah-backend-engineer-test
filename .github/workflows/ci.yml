@@ -81,8 +81,11 @@ jobs:
           ./migrate.sh
 
       # Run unit/API tests first (faster feedback) - exclude e2e directory entirely
+
       - name: Run unit and API tests
-        run: pytest -v --tb=short --cov=api --cov-report=xml --cov-report=term-missing --ignore=e2e/
+        run: |
+          PYTHONPATH=$PWD pytest -v --tb=short --cov=api --cov-report=xml --cov-report=term-missing --ignore=e2e/
+
 
       # Install Playwright only for E2E tests
       - name: Install Playwright browsers
