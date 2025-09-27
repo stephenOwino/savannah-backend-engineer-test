@@ -17,7 +17,7 @@ spec:
     spec:
       initContainers:
         - name: migrate
-          image: otizaaa/savannah_assess:v3
+          image: otizaaa/savannah_assess:v2
           command: ["/app/migrate.sh"]
           envFrom:
             - configMapRef:
@@ -37,7 +37,7 @@ spec:
                   key: DJANGO_SECRET_KEY
       containers:
         - name: django-app
-          image: otizaaa/savannah_assess:v3
+          image: otizaaa/savannah_assess:v2
           ports:
             - containerPort: 8888
           envFrom:
