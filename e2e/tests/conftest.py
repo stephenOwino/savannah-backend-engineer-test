@@ -4,6 +4,7 @@ from pathlib import Path
 
 import django  # Import Django but don’t setup yet
 import pytest
+
 # Now import Django models
 from django.contrib.auth.models import User
 from playwright.sync_api import sync_playwright
