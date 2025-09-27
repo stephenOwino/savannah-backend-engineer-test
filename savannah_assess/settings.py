@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -132,7 +133,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- OIDC AUTH CONFIG (mozilla-django-oidc) ---
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +164,8 @@ OIDC_STORE_ACCESS_TOKEN = True
 OIDC_STORE_ID_TOKEN = True
 
 # Custom claims mapping (optional)
-OIDC_USERNAME_ALGO = "mozilla_django_oidc.utils.generate_username"
+# OIDC_USERNAME_ALGO = "mozilla_django_oidc.utils.generate_username"...deprecated
+OIDC_USERNAME_CLAIM = "email"
 
 # Redirect URLs
 LOGIN_REDIRECT_URL = "/api/landing/"  # Updated to point to authenticated landing
