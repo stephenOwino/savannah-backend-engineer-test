@@ -5,7 +5,6 @@ from pathlib import Path
 import django
 import pytest
 from django.contrib.auth.models import User
-from playwright.sync_api import sync_playwright
 
 from api.models import Category, Customer, Order, OrderItem, Product
 
@@ -15,11 +14,52 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "savannah_assess.settings")
 django.setup()
 
 
+# Configure pytest for E2E vs regular tests
+def pytest_addoption(parser):
+    parser.addoption(
+        "--e2e",
+        action="store_true",
+        default=False,
+        help="Enable when running e2e tests",
+    )
+
+
+def determine_django_db_setup_scope(fixture_name, config):
+    """
+    E2E tests use the live_server fixture, which will wipe
+    the db after each test run, which conflicts with a
+    session scoped db setup.
+    Therefore, we use a function scoped db setup for e2e tests.
+    """
+    if config.getoption("--e2e"):
+        return "function"
+    return "session"
+
+
+@pytest.fixture(scope=determine_django_db_setup_scope)
+def django_db_setup(django_db_setup, django_db_blocker):
+    """Custom database setup that handles E2E vs regular tests."""
+    pass
+
+
+# Custom live server fixture with proper static assets
 @pytest.fixture
-@pytest.mark.django_db(transaction=True)
-def test_data(db):
-    """Create initial test data."""
-    user = User.objects.create_user(username="testuser", email="test@example.com", password="testpass123")
+def my_live_server(live_server, settings):
+    """
+    Customized live_server fixture that configures STATIC_URL to point to the live server URL.
+    """
+    settings.STATIC_URL = live_server.url + "/static/"
+    yield live_server
+
+
+@pytest.fixture
+def test_data(db) -> dict:
+    """Create initial test data - works with live_server."""
+    user = User.objects.create_user(
+        username="testuser",
+        email="test@example.com",
+        password="testpass123"
+    )
 
     customer = Customer.objects.create(
         user=user,
@@ -28,7 +68,10 @@ def test_data(db):
     )
 
     root_category = Category.objects.create(name="Electronics")
-    sub_category = Category.objects.create(name="Smartphones", parent=root_category)
+    sub_category = Category.objects.create(
+        name="Smartphones",
+        parent=root_category
+    )
 
     product1 = Product.objects.create(
         name="iPhone 14",
@@ -56,72 +99,99 @@ def test_data(db):
 
 
 @pytest.fixture
-@pytest.mark.django_db(transaction=True)
-def sample_product(db):
+def shared_category(db) -> Category:
+    """Create a shared category to reduce DB writes."""
+    return Category.objects.create(name="Shared Category")
+
+
+@pytest.fixture
+def sample_product(db, shared_category) -> dict:
     """Create a sample product for testing."""
-    user = User.objects.create_user(username="sampleuser", email="sample@example.com", password="testpass123")
+    user = User.objects.create_user(
+        username="sampleuser",
+        email="sample@example.com",
+        password="testpass123"
+    )
     customer = Customer.objects.create(
         user=user,
         phone_number="+254700123457",
         address="456 Test Avenue, Nairobi",
     )
 
-    category = Category.objects.create(name="Sample Category")
     product = Product.objects.create(
         name="Sample Product",
         description="A sample product",
         price=1000.00,
-        category=category,
+        category=shared_category,
         stock=50,
     )
 
-    return {"id": product.id, "product": product, "category": category, "customer": customer, "user": user}
+    return {
+        "id": product.id,
+        "product": product,
+        "category": shared_category,
+        "customer": customer,
+        "user": user
+    }
 
 
 @pytest.fixture
-@pytest.mark.django_db(transaction=True)
-def another_product(db):
+def another_product(db, shared_category) -> dict:
     """Create another product for testing."""
-    category = Category.objects.create(name="Another Category")
     product = Product.objects.create(
         name="Another Test Product",
         description="Another test product",
         price=2000.00,
-        category=category,
+        category=shared_category,
         stock=25,
     )
 
-    return product
+    return {
+        "id": product.id,
+        "product": product,
+        "category": shared_category,
+    }
 
 
 @pytest.fixture
-@pytest.mark.django_db(transaction=True)
-def sample_order(db, sample_product):
+def sample_order(db, sample_product) -> dict:
     """Create a sample order for testing."""
-    # Create an order using the customer from sample_product
-    order = Order.objects.create(customer=sample_product["customer"])
+    order = Order.objects.create(
+        customer=sample_product["customer"]
+    )
 
-    # Create order item
-    order_item = OrderItem.objects.create(order=order, product=sample_product["product"], quantity=2)
+    order_item = OrderItem.objects.create(
+        order=order,
+        product=sample_product["product"],
+        quantity=2
+    )
 
-    # Update the order total
     order.update_total_amount()
 
     return {
         "order": order,
         "order_item": order_item,
         "product": sample_product["product"],
-        "customer": sample_product["customer"],
+        "customer": sample_product["customer"]
     }
 
 
+# Playwright fixtures for API testing - Using built-in fixtures properly
 @pytest.fixture
-def api_request_context(live_server):
-    """Provide a Playwright APIRequestContext for each test."""
-    with sync_playwright() as p:
-        request_context = p.request.new_context(
-            base_url=live_server.url,
-            extra_http_headers={"Content-Type": "application/json"},
-        )
-        yield request_context
-        request_context.dispose()
+def api_request_context(my_live_server, playwright):
+    """Provide a Playwright APIRequestContext for API testing."""
+    request_context = playwright.request.new_context(
+        base_url=my_live_server.url,
+        extra_http_headers={"Content-Type": "application/json"},
+    )
+    yield request_context
+    request_context.dispose()
+
+
+@pytest.fixture
+def browser_context_args(browser_context_args):
+    """Override browser context options."""
+    return {
+        **browser_context_args,
+        "ignore_https_errors": True,
+    }
