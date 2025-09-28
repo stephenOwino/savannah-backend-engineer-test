@@ -6,29 +6,32 @@ on:
   pull_request:
     branches: ["main"]
 
+env:
+  # Global environment variables - defined once, used everywhere
+  POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  DB_HOST: localhost
+  DB_PORT: "5432"
+  DJANGO_SUPERUSER_USERNAME: ${{ secrets.DJANGO_SUPERUSER_USERNAME }}
+  DJANGO_SUPERUSER_EMAIL: ${{ secrets.DJANGO_SUPERUSER_EMAIL }}
+  DJANGO_SUPERUSER_PASSWORD: ${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
+  DEBUG: "False"
+  PORT: "8888"
+  OIDC_OP_DOMAIN: ${{ secrets.OIDC_OP_DOMAIN }}
+  OIDC_RP_CLIENT_ID: ${{ secrets.OIDC_RP_CLIENT_ID }}
+  OIDC_RP_CLIENT_SECRET: ${{ secrets.OIDC_RP_CLIENT_SECRET }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    env:
-      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      DB_HOST: localhost
-      DB_PORT: "5432"
-      DJANGO_SUPERUSER_USERNAME: ${{ secrets.DJANGO_SUPERUSER_USERNAME }}
-      DJANGO_SUPERUSER_EMAIL: ${{ secrets.DJANGO_SUPERUSER_EMAIL }}
-      DJANGO_SUPERUSER_PASSWORD: ${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
-      DEBUG: "False"
-      PORT: "8888"
-      OIDC_OP_DOMAIN: ${{ secrets.OIDC_OP_DOMAIN }}
-      OIDC_RP_CLIENT_ID: ${{ secrets.OIDC_RP_CLIENT_ID }}
-      OIDC_RP_CLIENT_SECRET: ${{ secrets.OIDC_RP_CLIENT_SECRET }}
+    container: mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
     services:
       postgres:
         image: postgres:15
         env:
+          # Services need explicit environment variables - they don't inherit global env
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -80,22 +83,15 @@ jobs:
           chmod +x ./migrate.sh
           ./migrate.sh
 
-      # Run unit/API tests first (faster feedback) - exclude e2e directory entirely
-
-      - name: Run unit and API tests
+      # Run unit and integration tests first (faster feedback)
+      - name: Run unit and integration tests
         run: |
-          export PYTHONPATH=$PWD
-          export DJANGO_SETTINGS_MODULE=savannah_assess.settings
-          pytest -v --tb=short --cov=api --cov-report=xml --cov-report=term-missing --ignore=e2e/
-
-
-      # Install Playwright only for E2E tests
-      - name: Install Playwright browsers
-        run: playwright install --with-deps chromium
+          chmod +x ./runtests.sh
+          ./runtests.sh --cov=api --cov-report=xml --cov-report=term-missing tests/unit tests/integration -v
 
       # Run E2E tests separately
       - name: Run E2E tests
-        run: pytest e2e/ -v --tb=short
+        run: ./runtests.sh tests/e2e -v
         env:
           # Run headless in CI
           PLAYWRIGHT_BROWSERS_PATH: 0
