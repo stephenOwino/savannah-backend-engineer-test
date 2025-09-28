@@ -32,8 +32,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "api",
     "rest_framework",
-    "mozilla_django_oidc",  # OIDC client
+    "mozilla_django_oidc",
     "corsheaders",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [

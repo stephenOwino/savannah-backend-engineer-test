@@ -6,3 +6,19 @@ include = '\.pyi?$'
 [tool.isort]
 profile = "black"
 line_length = 130
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "savannah_assess.settings"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--tb=short --strict-markers"
+asyncio_mode = "auto"
+markers = [
+    "api: API endpoint tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+    "order: Order-related API tests",
+    "category: Category-related API tests",
+    "e2e: End-to-end tests using Playwright"
+]

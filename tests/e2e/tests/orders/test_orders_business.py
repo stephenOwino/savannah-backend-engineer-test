@@ -5,11 +5,14 @@ pytestmark = pytest.mark.order
 
 
 def test_order_total_amount_calculation(api_request_context: APIRequestContext, sample_product):
-    payload = {"items": [{"product": sample_product["id"], "quantity": 3}]}
-    response = api_request_context.post("/api/orders/", data=payload)
+    payload = {"products": [{"product_id": sample_product.id, "quantity": 3}]}
+    # Ensure JSON body is sent correctly
+    response = api_request_context.post("/api/orders/", json=payload)
     expect(response).to_be_ok()
     data = response.json()
-    assert data["total_amount"] == sample_product["price"] * 3
+    assert response.status == 201
+    # Cast total_amount to float to match test expectation
+    assert float(data["total_amount"]) == float(sample_product.price) * 3
 
 
 def test_orders_sorted_by_created_date(api_request_context: APIRequestContext):

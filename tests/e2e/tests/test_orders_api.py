@@ -2,8 +2,6 @@ import json
 
 import pytest
 
-# from playwright.sync_api import APIRequestContext
-
 
 @pytest.mark.api
 class TestOrdersAPI:
@@ -24,13 +22,13 @@ class TestOrdersAPI:
         )
         assert response.status == 201
         data = response.json()
-        # Fix: check actual API fields
+        # FIX: use dot notation on Customer instance
         assert data["customer"] == test_data["customer"].id
         assert "created_at" in data
 
     def test_create_order_insufficient_stock(self, api_request_context, test_data, live_server):
         product1 = test_data["products"][0]
-        order_data = {"products": [{"product_id": product1.id, "quantity": 1000}]}
+        order_data = {"products": [{"product_id": product1.id, "quantity": 1000}]}  # exceeds stock
         response = api_request_context.post(
             f"{live_server.url}/api/orders/",
             data=json.dumps(order_data),
@@ -40,7 +38,7 @@ class TestOrdersAPI:
 
     def test_create_order_invalid_quantity(self, api_request_context, test_data, live_server):
         product1 = test_data["products"][0]
-        order_data = {"products": [{"product_id": product1.id, "quantity": 0}]}
+        order_data = {"products": [{"product_id": product1.id, "quantity": 0}]}  # invalid quantity
         response = api_request_context.post(
             f"{live_server.url}/api/orders/",
             data=json.dumps(order_data),
