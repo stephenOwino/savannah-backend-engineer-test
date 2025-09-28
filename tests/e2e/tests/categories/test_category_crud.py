@@ -7,11 +7,12 @@ import pytest
 class TestCategoryCRUD:
     """CRUD operations for categories."""
 
-    def test_create_root_and_child(self, api_request_context, live_server):
+    def test_create_root_and_child(self, api_request_context):
+        """Test creating root category and child category."""
         # Root category
         root_payload = {"name": "Home & Garden"}
         root_resp = api_request_context.post(
-            f"{live_server.url}/api/categories/",
+            "/api/categories/",
             data=json.dumps(root_payload),
             headers={"Content-Type": "application/json"},
         )
@@ -23,27 +24,33 @@ class TestCategoryCRUD:
         # Child category
         child_payload = {"name": "Tools", "parent": root_data["id"]}
         child_resp = api_request_context.post(
-            f"{live_server.url}/api/categories/",
+            "/api/categories/",
             data=json.dumps(child_payload),
             headers={"Content-Type": "application/json"},
         )
         assert child_resp.status == 201
-        assert child_resp.json()["parent"] == root_data["id"]
+        child_data = child_resp.json()
+        assert child_data["parent"] == root_data["id"]
+        assert child_data["name"] == "Tools"
 
-    def test_update_category(self, api_request_context, live_server, test_data):
+    def test_update_category(self, api_request_context, test_data):
+        """Test updating a category."""
         update_data = {"name": "Updated Electronics"}
         resp = api_request_context.patch(
-            f"{live_server.url}/api/categories/{test_data['root_category'].id}/",
+            f"/api/categories/{test_data['root_category'].id}/",
             data=json.dumps(update_data),
             headers={"Content-Type": "application/json"},
         )
         assert resp.status == 200
-        assert resp.json()["name"] == "Updated Electronics"
+        updated_data = resp.json()
+        assert updated_data["name"] == "Updated Electronics"
 
-    def test_delete_category(self, api_request_context, live_server, test_data):
+    def test_delete_category(self, api_request_context, test_data):
+        """Test deleting a category."""
         sub_id = test_data["sub_category"].id
-        resp = api_request_context.delete(f"{live_server.url}/api/categories/{sub_id}/")
+        resp = api_request_context.delete(f"/api/categories/{sub_id}/")
         assert resp.status == 204
 
-        get_resp = api_request_context.get(f"{live_server.url}/api/categories/{sub_id}/")
+        # Verify category is deleted
+        get_resp = api_request_context.get(f"/api/categories/{sub_id}/")
         assert get_resp.status == 404

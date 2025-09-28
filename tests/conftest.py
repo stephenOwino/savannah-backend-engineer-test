@@ -1,34 +1,37 @@
-# tests/conftest.py
+# conftest.py
+
 import os
 import uuid
+from typing import Any, Callable, Dict
 
 import pytest
-from _pytest.config import Config
-from _pytest.config.argparsing import Parser
-from _pytest.fixtures import FixtureRequest
-from django.conf import LazySettings
 from django.contrib.auth.models import User
-from django.utils import timezone
 from playwright.sync_api import APIRequestContext, Playwright
 from pytest_django.live_server_helper import LiveServer
 from rest_framework.authtoken.models import Token
 
-from api.models import Category, Customer, Order, OrderItem, Product
+from api.models import Category, Customer, Product
 
 os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")
 
+# ----------------- Pytest Configuration Hooks -----------------
 
-# ---------------- Pytest hooks/options ----------------
-def pytest_addoption(parser: Parser) -> None:
+
+def pytest_addoption(parser):
+    """Add custom pytest command line options."""
     parser.addoption("--e2e", action="store_true", default=False, help="Enable when running end-to-end tests.")
     parser.addoption("--runplaywright", action="store_true", default=False, help="Run playwright tests")
 
 
 def pytest_configure(config):
+    """Configure pytest markers and settings."""
     config.addinivalue_line("markers", "playwright: mark test as playwright test")
+    config.addinivalue_line("markers", "api: mark test as API test")
+    config.addinivalue_line("markers", "order: mark test as order-related test")
 
 
 def pytest_collection_modifyitems(config, items):
+    """Skip Playwright tests if --runplaywright option is not given."""
     if config.getoption("--runplaywright"):
         return
     skip_playwright = pytest.mark.skip(reason="need --runplaywright option to run")
@@ -37,162 +40,137 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_playwright)
 
 
-def determine_django_db_setup_scope(fixture_name: str, config: Config) -> str:
-    return "function" if config.getoption("--e2e") else "session"
+# ----------------- Core Test Infrastructure Fixtures -----------------
 
 
-@pytest.fixture(scope=determine_django_db_setup_scope)
-def django_db_setup(django_db_setup: FixtureRequest, django_db_blocker) -> None:
-    pass
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args: dict) -> dict:
+    """Configure browser context arguments for testing."""
+    return {**browser_context_args, "ignore_https_errors": True}
 
 
-# ---------------- Core fixtures ----------------
 @pytest.fixture(scope="function")
-def my_live_server(live_server: LiveServer, settings: LazySettings) -> LiveServer:
-    settings.STATIC_URL = f"{live_server.url}/static/"
+def api_live_server(live_server: LiveServer, settings) -> LiveServer:
+    """
+    Configure the live server with DRF settings required for API tests.
+    Renamed from 'my_live_server' for clarity.
+    """
     settings.REST_FRAMEWORK = {
         "DEFAULT_AUTHENTICATION_CLASSES": [
             "rest_framework.authentication.SessionAuthentication",
             "rest_framework.authentication.TokenAuthentication",
         ],
         "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
-        "DEFAULT_RENDERER_CLASSES": [
-            "rest_framework.renderers.JSONRenderer",
-            "rest_framework.renderers.BrowsableAPIRenderer",
-        ],
     }
     return live_server
 
 
-# ---------------- Data fixtures ----------------
+# ----------------- API and Playwright Fixtures -----------------
+
+
 @pytest.fixture(scope="function")
-def sample_user(db: None) -> User:
+def api_request_context(api_live_server: LiveServer, playwright: Playwright, auth_token: str) -> APIRequestContext:
+    """Create an authenticated API request context for testing."""
+    request_context = playwright.request.new_context(
+        base_url=api_live_server.url,
+        extra_http_headers={"Authorization": f"Token {auth_token}"},
+    )
+    yield request_context
+    request_context.dispose()
+
+
+@pytest.fixture(scope="function")
+def unauth_api_request_context(api_live_server: LiveServer, playwright: Playwright) -> APIRequestContext:
+    """Create an unauthenticated API request context."""
+    request_context = playwright.request.new_context(base_url=api_live_server.url)
+    yield request_context
+    request_context.dispose()
+
+
+# ----------------- Data Factory Fixtures -----------------
+
+
+@pytest.fixture(scope="function")
+def sample_user(db) -> User:
+    """Create a sample user with unique credentials."""
     unique_id = uuid.uuid4().hex[:8]
     return User.objects.create_user(
         username=f"testuser_{unique_id}",
-        email=f"test_{unique_id}@example.com",
         password="testpassword123",
     )
 
 
+@pytest.fixture
+def auth_token(db, sample_user: User) -> str:
+    """Create an authentication token for the sample user."""
+    token, _ = Token.objects.get_or_create(user=sample_user)
+    return token.key
+
+
 @pytest.fixture(scope="function")
-def sample_customer(db: None, sample_user: User) -> Customer:
-    customer = Customer.objects.get(user=sample_user)
-    digits = uuid.uuid4().int % (10**8)
-    customer.phone_number = f"+2547{digits:08d}"
+def sample_customer(db, sample_user: User) -> Customer:
+    """Create a sample customer linked to the sample user."""
+    customer, _ = Customer.objects.get_or_create(user=sample_user)
+    customer.phone_number = f"+2547{uuid.uuid4().int % (10**8):08d}"
     customer.address = "456 Test Avenue, Nairobi"
     customer.save()
     return customer
 
 
 @pytest.fixture(scope="function")
-def root_and_sub_categories(db: None):
-    root = Category.objects.create(name=f"RootCat-{uuid.uuid4().hex[:6]}")
-    sub = Category.objects.create(name=f"SubCat-{uuid.uuid4().hex[:6]}", parent=root)
-    return root, sub
+def category_factory(db) -> Callable[..., Category]:
+    """A factory fixture to create categories."""
+
+    def _create_category(**kwargs: Dict[str, Any]) -> Category:
+        name = kwargs.pop("name", f"Category-{uuid.uuid4().hex[:6]}")
+        return Category.objects.create(name=name, **kwargs)
+
+    return _create_category
 
 
 @pytest.fixture(scope="function")
-def sample_product(db: None, root_and_sub_categories) -> Product:
-    _, sub = root_and_sub_categories
-    return Product.objects.create(
-        name=f"Sample Product {uuid.uuid4().hex[:6]}",
-        description="A product for testing purposes.",
-        price=1500.00,
-        category=sub,
-        stock=50,
-    )
+def product_factory(db, category_factory: Callable[..., Category]) -> Callable[..., Product]:
+    """
+    A factory fixture to create products.
+    This replaces `sample_product`, `another_product`, and `fresh_sample_product`.
+    """
+
+    def _create_product(**kwargs: Dict[str, Any]) -> Product:
+        # If no category is provided, create a default one.
+        if "category" not in kwargs:
+            kwargs["category"] = category_factory()
+
+        # Set default values that can be overridden by kwargs.
+        defaults = {
+            "name": f"Product-{uuid.uuid4().hex[:6]}",
+            "description": "A test product.",
+            "price": 1000.00,
+            "stock": 50,
+        }
+        defaults.update(kwargs)
+        return Product.objects.create(**defaults)
+
+    return _create_product
+
+
+# ----------------- Combined Test Data Fixture -----------------
 
 
 @pytest.fixture(scope="function")
-def another_product(db: None, root_and_sub_categories) -> Product:
-    _, sub = root_and_sub_categories
-    return Product.objects.create(
-        name=f"Another Product {uuid.uuid4().hex[:6]}",
-        description="Another product for complex scenarios.",
-        price=2500.00,
-        category=sub,
-        stock=25,
-    )
+def test_data(db, category_factory, product_factory, sample_customer) -> Dict[str, Any]:
+    """
+    Combine common test data into a single, convenient fixture.
+    Uses the new factories for setup.
+    """
+    root_category = category_factory(name="Electronics")
+    sub_category = category_factory(name="Smartphones", parent=root_category)
 
+    product1 = product_factory(category=sub_category, price=1500.00)
+    product2 = product_factory(category=sub_category, price=2500.00)
 
-# ---------------- New / missing fixtures ----------------
-@pytest.fixture(scope="function")
-def fresh_sample_product(db: None, root_and_sub_categories) -> Product:
-    _, sub = root_and_sub_categories
-    return Product.objects.create(
-        name=f"Fresh Product {uuid.uuid4().hex[:6]}",
-        description="Fresh product for isolated tests.",
-        price=2000.00,
-        category=sub,
-        stock=30,
-    )
-
-
-@pytest.fixture(scope="function")
-def isolated_order(db: None, sample_customer: Customer, fresh_sample_product: Product) -> Order:
-    order = Order.objects.create(customer=sample_customer, created_at=timezone.now())
-    OrderItem.objects.create(order=order, product=fresh_sample_product, quantity=1)
-    order.update_total_amount()
-    return order
-
-
-@pytest.fixture(scope="function")
-def sample_order(db: None, sample_customer: Customer, sample_product: Product) -> Order:
-    order = Order.objects.create(customer=sample_customer, created_at=timezone.now())
-    OrderItem.objects.create(order=order, product=sample_product, quantity=2)
-    order.update_total_amount()
-    return order
-
-
-@pytest.fixture(scope="function")
-def auth_token(sample_user: User, db: None) -> str:
-    token, _ = Token.objects.get_or_create(user=sample_user)
-    return token.key
-
-
-# ---------------- Playwright / API fixtures ----------------
-@pytest.fixture(scope="function")
-def test_server(page, live_server):
-    page.goto(live_server.url)
-    return page
-
-
-@pytest.fixture(scope="function")
-def api_request_context(my_live_server: LiveServer, playwright: Playwright, auth_token: str) -> APIRequestContext:
-    request_context = playwright.request.new_context(
-        base_url=my_live_server.url,
-        extra_http_headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Token {auth_token}",
-        },
-    )
-    yield request_context
-    request_context.dispose()
-
-
-@pytest.fixture(scope="function")
-def unauth_api_request_context(my_live_server: LiveServer, playwright: Playwright) -> APIRequestContext:
-    request_context = playwright.request.new_context(
-        base_url=my_live_server.url,
-        extra_http_headers={"Content-Type": "application/json"},
-    )
-    yield request_context
-    request_context.dispose()
-
-
-@pytest.fixture(scope="session")
-def browser_context_args(browser_context_args: dict) -> dict:
-    return {**browser_context_args, "ignore_https_errors": True}
-
-
-# ---------------- Combined fixture ----------------
-@pytest.fixture(scope="function")
-def test_data(sample_product: Product, another_product: Product, root_and_sub_categories, sample_customer: Customer):
-    root, sub = root_and_sub_categories
     return {
-        "root_category": root,
-        "sub_category": sub,
-        "products": [sample_product, another_product],
+        "root_category": root_category,
+        "sub_category": sub_category,
+        "products": [product1, product2],
         "customer": sample_customer,
     }
