@@ -116,6 +116,27 @@ def another_product(db: None, root_and_sub_categories) -> Product:
     )
 
 
+# ---------------- New / missing fixtures ----------------
+@pytest.fixture(scope="function")
+def fresh_sample_product(db: None, root_and_sub_categories) -> Product:
+    _, sub = root_and_sub_categories
+    return Product.objects.create(
+        name=f"Fresh Product {uuid.uuid4().hex[:6]}",
+        description="Fresh product for isolated tests.",
+        price=2000.00,
+        category=sub,
+        stock=30,
+    )
+
+
+@pytest.fixture(scope="function")
+def isolated_order(db: None, sample_customer: Customer, fresh_sample_product: Product) -> Order:
+    order = Order.objects.create(customer=sample_customer, created_at=timezone.now())
+    OrderItem.objects.create(order=order, product=fresh_sample_product, quantity=1)
+    order.update_total_amount()
+    return order
+
+
 @pytest.fixture(scope="function")
 def sample_order(db: None, sample_customer: Customer, sample_product: Product) -> Order:
     order = Order.objects.create(customer=sample_customer, created_at=timezone.now())

@@ -44,15 +44,18 @@ class OrderItemReadSerializer(serializers.ModelSerializer):
     """Serializer for reading order items."""
 
     product_name = serializers.CharField(source="product.name")
-    subtotal = serializers.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
         fields = ["id", "product", "product_name", "quantity", "subtotal"]
 
+    def get_subtotal(self, obj):
+        return obj.quantity * obj.product.price
+
 
 class OrderItemWriteSerializer(serializers.Serializer):
-    """Serializer for writing (creating) order items."""
+    """Serializer for writing (creating/updating) order items."""
 
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
@@ -64,12 +67,11 @@ class OrderItemWriteSerializer(serializers.Serializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    # For reading order details
-    items = OrderItemReadSerializer(source="orderitem_set", many=True, read_only=True)
-    customer_name = serializers.CharField(source="customer.user.username", read_only=True)
+    """Order serializer for read/write operations."""
 
-    # For creating an order
-    products = OrderItemWriteSerializer(many=True, write_only=True)
+    items = OrderItemReadSerializer(many=True, read_only=True)
+    customer_name = serializers.CharField(source="customer.user.username", read_only=True)
+    products = OrderItemWriteSerializer(many=True, write_only=True, required=False)
 
     class Meta:
         model = Order
@@ -82,7 +84,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "items",
             "products",
         ]
-
         read_only_fields = [
             "id",
             "customer",
@@ -91,3 +92,45 @@ class OrderSerializer(serializers.ModelSerializer):
             "total_amount",
             "items",
         ]
+
+    def create(self, validated_data):
+        products_data = validated_data.pop("products", [])
+        order = Order.objects.create(**validated_data)
+        for item in products_data:
+            product = Product.objects.get(id=item["product_id"])
+            quantity = item["quantity"]
+            OrderItem.objects.create(order=order, product=product, quantity=quantity)
+            product.stock -= quantity
+            product.save()
+        order.update_total_amount()
+        order.save()
+        return order
+
+    def update(self, instance, validated_data):  # FIX: now inside class
+        products_data = validated_data.pop("products", [])
+
+        for item_data in products_data:
+            product = Product.objects.get(id=item_data["product_id"])
+            quantity = item_data["quantity"]
+
+            # Check if product already exists in the order
+            order_item = instance.items.filter(product=product).first()
+            if order_item:
+                # Restore old stock, then apply new quantity
+                product.stock += order_item.quantity
+                product.save()
+
+                order_item.quantity = quantity
+                order_item.save()
+
+                product.stock -= quantity
+                product.save()
+            else:
+                # Create new order item
+                OrderItem.objects.create(order=instance, product=product, quantity=quantity)
+                product.stock -= quantity
+                product.save()
+
+        instance.update_total_amount()
+        instance.save()
+        return instance
