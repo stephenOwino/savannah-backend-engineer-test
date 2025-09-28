@@ -11,7 +11,7 @@ env:
   POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  DB_HOST: localhost
+  DB_HOST: postgres  #service name
   DB_PORT: "5432"
   DJANGO_SUPERUSER_USERNAME: ${{ secrets.DJANGO_SUPERUSER_USERNAME }}
   DJANGO_SUPERUSER_EMAIL: ${{ secrets.DJANGO_SUPERUSER_EMAIL }}
