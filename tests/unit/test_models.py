@@ -1,14 +1,15 @@
 # tests/unit/test_models.py
 from decimal import Decimal
+
 import pytest
 
 from api.models import Customer
 from tests.factories import (
-    UserFactory,
-    ProductFactory,
+    CustomerFactory,
     OrderFactory,
     OrderItemFactory,
-    CustomerFactory,
+    ProductFactory,
+    UserFactory,
 )
 
 
@@ -29,10 +30,7 @@ def test_product_has_sufficient_stock():
 def test_order_item_subtotal_and_order_total():
     customer = CustomerFactory()  # ensures unique user/customer
     order = OrderFactory(customer=customer)
-    order_item = OrderItemFactory(
-        order=order, quantity=2, product__price=Decimal("15.00")
-    )
+    order_item = OrderItemFactory(order=order, quantity=2, product__price=Decimal("15.00"))
 
     assert order_item.subtotal == Decimal("30.00")
     assert order.total_amount == Decimal("30.00")
-
