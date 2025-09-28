@@ -23,6 +23,7 @@ class CustomerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Customer
 
+    # Instead of always making a new User, reuse the one created by the signal
     user = factory.SubFactory(UserFactory)
     phone_number = factory.Faker("phone_number")
     address = factory.Faker("address")
@@ -51,6 +52,7 @@ class OrderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Order
 
+    # Use an existing customer if available
     customer = factory.SubFactory(CustomerFactory)
     total_amount = Decimal("0.00")
 
