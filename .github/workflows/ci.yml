@@ -76,13 +76,13 @@ jobs:
           chmod +x ./migrate.sh
           ./migrate.sh
 
-      - name: Run unit and integration tests
+      # Combined coverage for all test types
+      - name: Run tests with combined coverage
         run: |
           chmod +x ./runtests.sh
-          ./runtests.sh --cov=api --cov-report=xml --cov-report=term-missing tests/unit tests/integration -v
-
-      - name: Run E2E tests
-        run: ./runtests.sh tests/e2e -v
+          coverage run -m pytest tests/unit tests/integration -v
+          coverage run --append -m pytest tests/e2e -v
+          coverage xml -o coverage.xml
         env:
           PLAYWRIGHT_BROWSERS_PATH: 0
 
@@ -90,13 +90,13 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
-          flags: api-tests
+          flags: full-suite
           name: codecov-umbrella
           fail_ci_if_error: false
 
       - name: Generate coverage summary
         run: |
-          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Combined Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || echo "Coverage report generation failed" >> $GITHUB_STEP_SUMMARY
