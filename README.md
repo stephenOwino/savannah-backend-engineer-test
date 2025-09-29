@@ -379,7 +379,6 @@ python manage.py createsuperuserifnotexists
 
 - SMS notifications use sandbox mode (requires Africa's Talking production account)
 - Email notifications use console backend in development
-- Rate limiting not implemented (recommended for production)
 
 ## 📝 Project Structure
 
