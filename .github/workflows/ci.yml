@@ -64,7 +64,7 @@ jobs:
           --health-retries 5
 
     env:
-      DB_HOST: postgres
+      DB_HOST: localhost
 
     steps:
       - uses: actions/checkout@v4
@@ -83,12 +83,10 @@ jobs:
       - name: Wait for Postgres
         run: |
           for i in {1..25}; do
-            pg_isready -h localhost -p 5432 -U $POSTGRES_USER && break
+            pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER && break
             echo "Postgres not ready yet... retrying ($i/25)"
             sleep 2
           done
-        env:
-          DB_HOST: localhost
 
       - name: Run migrations and create superuser
         run: |
