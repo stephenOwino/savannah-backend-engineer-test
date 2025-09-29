@@ -43,6 +43,7 @@ def api_root(request):
                 else None
             ),
             "endpoints": {
+                "obtain_token": "/api/obtain-token/",
                 "categories": "/api/categories/",
                 "products": "/api/products/",
                 "orders": "/api/orders/",

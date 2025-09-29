@@ -159,3 +159,25 @@ def order_form_view(request):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     return Response({"error": "Method not allowed"}, status=405)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def obtain_auth_token(request):
+    """Obtain authentication token"""
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    if not username or not password:
+        return Response({"error": "Username and password required"}, status=400)
+
+    from django.contrib.auth import authenticate
+    from rest_framework.authtoken.models import Token
+
+    user = authenticate(username=username, password=password)
+
+    if user:
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "username": user.username, "email": user.email})
+
+    return Response({"error": "Invalid credentials"}, status=401)

@@ -5,7 +5,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 # Local application imports
-from .views import CategoryViewSet, OrderViewSet, ProductViewSet, order_form_view
+from .views import CategoryViewSet, OrderViewSet, ProductViewSet, order_form_view, obtain_auth_token
 
 router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="category")
@@ -15,4 +15,5 @@ router.register(r"orders", OrderViewSet, basename="order")
 urlpatterns = [
     path("", include(router.urls)),
     path("order_form/", order_form_view, name="order_form"),
+    path("obtain-token/", obtain_auth_token, name="obtain-token"),
 ]
