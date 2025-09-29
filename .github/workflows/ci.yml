@@ -22,10 +22,8 @@ env:
   OIDC_RP_CLIENT_SECRET: ${{ secrets.OIDC_RP_CLIENT_SECRET }}
 
 jobs:
-  test:
+  unit_integration_tests:
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright/python:v1.40.0-jammy
-
     services:
       postgres:
         image: postgres:15
@@ -44,13 +42,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-container-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-container-
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
@@ -63,47 +66,64 @@ jobs:
           black --check . --config pyproject.toml
           isort . --check-only --settings-path pyproject.toml
 
-      - name: Wait for Postgres
-        run: |
-          for i in {1..30}; do
-            pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER && break
-            echo "Postgres not ready yet... retrying ($i/30)"
-            sleep 1
-          done
-
       - name: Run migrations and create superuser
         run: |
           chmod +x ./migrate.sh
           ./migrate.sh
 
-      # Combined coverage for all test types
-      - name: Run tests with combined coverage
+      - name: Run Unit & Integration Tests
         run: |
           chmod +x ./runtests.sh
           coverage run -m pytest tests/unit tests/integration -v
+          coverage xml -o coverage_unit_integration.xml
+
+  e2e_tests:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright/python:v1.40.0-jammy
+    needs: unit_integration_tests
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: |
+          chmod +x ./runtests.sh
           coverage run --append -m pytest tests/e2e -v
-          coverage xml -o coverage.xml
         env:
           PLAYWRIGHT_BROWSERS_PATH: 0
 
-      - name: Upload coverage to Codecov
+      - name: Upload Combined Coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./coverage.xml
+          file: coverage_unit_integration.xml
           flags: full-suite
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      - name: Generate coverage summary
-        run: |
-          echo "## Combined Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          coverage report --format=markdown >> $GITHUB_STEP_SUMMARY || echo "Coverage report generation failed" >> $GITHUB_STEP_SUMMARY
-
-  docker:
+  docker_build:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [unit_integration_tests, e2e_tests]
+
     steps:
       - uses: actions/checkout@v4
 
