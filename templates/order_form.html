@@ -1,13 +1,195 @@
 <!DOCTYPE html>
-<html>
-<head><title>Create Order</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Order Notification</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .order-badge {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .info-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .info-section h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 16px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .info-value {
+            color: #333;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .items-table th {
+            background-color: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .items-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .total-row {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .total-row td {
+            padding: 15px 12px;
+            border-top: 2px solid #667eea;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+        }
+        .category-tag {
+            display: inline-block;
+            background-color: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
 <body>
-  <h1>Create Order</h1>
-  <form action="/api/order_form/" method="post">
-    {% csrf_token %}
-    <input type="hidden" name="products" value='[{"product_id": 1, "quantity": 2}]'>
-    <button type="submit">Submit Order</button>
-  </form>
-  <a href="/">Back</a>
+    <div class="email-container">
+        <div class="header">
+            <h1>🛒 New Order Received</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">Savannah Informatics</p>
+        </div>
+
+        <div class="content">
+            <span class="order-badge">Order #{{ order_id }}</span>
+            <p style="color: #666;">{{ order_date|date:"F d, Y - H:i" }}</p>
+
+            <div class="info-section">
+                <h3>👤 Customer Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">{{ customer_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ customer_email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">{{ customer_phone }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Address:</span>
+                    <span class="info-value">{{ customer_address }}</span>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>📦 Order Items ({{ item_count }} item{{ item_count|pluralize }})</h3>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                {{ item.product_name }}
+                                <span class="category-tag">{{ item.category }}</span>
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>KES {{ item.price }}</td>
+                            <td>KES {{ item.subtotal }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3">TOTAL AMOUNT:</td>
+                            <td>KES {{ total_amount }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>This is an automated notification from Savannah Informatics.</strong></p>
+            <p>Please process this order at your earliest convenience.</p>
+            <p style="font-size: 12px; margin-top: 15px;">
+                © 2025 Savannah Informatics | 5th Floor, One Padmore Place, Nairobi
+            </p>
+        </div>
+    </div>
 </body>
 </html>
