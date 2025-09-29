@@ -1,0 +1,85 @@
+.
+├── api
+│   ├── admin.py
+│   ├── apps.py
+│   ├── fixtures
+│   │   └── products.json
+│   ├── __init__.py
+│   ├── management
+│   │   ├── commands
+│   │   │   ├── createsuperuserifnotexists.py
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   ├── 0002_remove_order_products_order_total_amount_and_more.py
+│   │   └── __init__.py
+│   ├── models.py
+│   ├── notifications.py
+│   ├── permissions.py
+│   ├── serializers.py
+│   ├── services
+│   │   └── sms_service.py
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── assets
+│   └── screen1.png
+├── db.sqlite3
+├── docker-compose.yml
+├── Dockerfile
+├── entrypoint.sh
+├── k8s
+│   ├── configmap.yaml
+│   ├── deploy.sh
+│   ├── django-app.yaml
+│   ├── django-service.yaml
+│   ├── ingress.yaml
+│   ├── namespace.yaml
+│   ├── postgres-pv.yaml
+│   ├── postgres.yaml
+│   ├── README.md
+│   └── secret.yaml
+├── manage.py
+├── migrate.sh
+├── project_structure.txt
+├── pyproject.toml
+├── pytest.ini
+├── README
+├── requirements-dev.txt
+├── requirements.txt
+├── runtests.sh
+├── savannah_assess
+│   ├── asgi.py
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── templates
+│   ├── home.html
+│   └── order_form.html
+└── tests
+    ├── conftest.py
+    ├── e2e
+    │   ├── __init__.py
+    │   ├── test_full_journer.py
+    │   └── tests
+    │       ├── categories
+    │       ├── __init__.py
+    │       ├── orders
+    │       └── test_products_api.py
+    ├── factories
+    │   ├── factories.py
+    │   └── __init__.py
+    ├── __init__.py
+    ├── integration
+    │   ├── __init__.py
+    │   ├── test_order_flow.py
+    │   └── test_urls.py
+    ├── TESTS.md
+    └── unit
+        ├── __init__.py
+        ├── test_models.py
+        └── test_serializers.py
+
+19 directories, 64 files

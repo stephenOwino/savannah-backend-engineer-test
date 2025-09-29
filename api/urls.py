@@ -5,7 +5,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 # Local application imports
-from .views import CategoryViewSet, OrderViewSet, ProductViewSet, order_form_view, obtain_auth_token
+from .views import CategoryViewSet, OrderViewSet, ProductViewSet, obtain_auth_token, order_form_view
 
 router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="category")
