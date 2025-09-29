@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# Wait for PostgreSQL to be ready
+# Wait for Postgres to be ready
 echo "Waiting for PostgreSQL to be ready..."
-until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_USER"; do
+until pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" > /dev/null 2>&1; do
   echo "Postgres not ready yet... retrying in 2 seconds"
   sleep 2
 done
