@@ -42,11 +42,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -54,6 +49,11 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
 
       - name: Install dependencies
         run: |
@@ -66,6 +66,14 @@ jobs:
           black --check . --config pyproject.toml
           isort . --check-only --settings-path pyproject.toml
 
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h $DB_HOST -p $DB_PORT -U $POSTGRES_USER && break
+            echo "Postgres not ready yet... retrying ($i/30)"
+            sleep 1
+          done
+
       - name: Run migrations and create superuser
         run: |
           chmod +x ./migrate.sh
@@ -76,6 +84,8 @@ jobs:
           chmod +x ./runtests.sh
           coverage run -m pytest tests/unit tests/integration -v
           coverage xml -o coverage_unit_integration.xml
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0
 
   e2e_tests:
     runs-on: ubuntu-latest
@@ -112,12 +122,11 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: 0
 
-      - name: Upload Combined Coverage to Codecov
+      - name: Upload E2E coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           file: coverage_unit_integration.xml
-          flags: full-suite
-          name: codecov-umbrella
+          flags: e2e
           fail_ci_if_error: false
 
   docker_build:
