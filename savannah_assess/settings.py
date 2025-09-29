@@ -190,6 +190,7 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Logging
+# Logging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -198,14 +199,25 @@ LOGGING = {
             "class": "logging.StreamHandler",
         },
     },
+    "root": {  # root logger catches everything
+        "handlers": ["console"],
+        "level": "DEBUG" if DEBUG else "INFO",
+    },
     "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
         "mozilla_django_oidc": {
             "handlers": ["console"],
             "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": True,
         },
-        "__main__": {  # Capture settings.py logs
+        "api": {  # app logs
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": True,
         },
     },
 }

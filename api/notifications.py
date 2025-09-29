@@ -10,39 +10,49 @@ logger = logging.getLogger(__name__)
 
 def send_order_confirmation_sms(order):
     customer = order.customer
+    first_item = order.items.first()
+    item_summary = f"{first_item.product.name} (x{first_item.quantity})" if first_item else "items"
+
     message = (
         f"Hi {customer.user.first_name or customer.user.username}, "
-        f"your order #{order.id} for KES {order.total_amount} has been placed. "
-        "Thank you."
+        f"your order #{order.id} ({item_summary}...) for KES {order.total_amount} has been placed. "
+        "Thank you for shopping with Savannah."
     )
+
     try:
         sms = SMSService()
         resp = sms.send_sms([customer.phone_number], message)
-        logging.info("send_order_confirmation_sms result: %s", resp)
+        logger.info("send_order_confirmation_sms result: %s", resp)
         return resp
     except Exception as e:
-        logging.warning("Failed to send order SMS: %s", e)
+        logger.warning("Failed to send order SMS: %s", e)
         return {"status": "failed", "error": str(e)}
 
 
 def send_new_order_admin_email(order):
-    # Notify admin by email, if configured.
     admin_email = getattr(settings, "ADMIN_EMAIL", None)
     if not admin_email:
-        logger.info("ADMIN_EMAIL not configured; skipping admin email.")
+        logger.error("ADMIN_EMAIL not configured; cannot send admin email.")
         return False
 
-    subject = f"New order received: #{order.id}"
+    customer = order.customer
+    subject = f"New Order #{order.id} from {customer.user.get_full_name() or customer.user.username}"
+
     lines = [
         f"Order ID: {order.id}",
-        f"Customer: {order.customer.user.get_full_name()} ({order.customer.user.email})",
-        f"Total: {order.total_amount}",
+        f"Customer: {customer.user.get_full_name()} ({customer.user.email})",
+        f"Phone: {customer.phone_number}",
+        f"Total: KES {order.total_amount}",
+        "",
         "Items:",
     ]
+
     for item in order.items.all():
         lines.append(f"- {item.quantity} × {item.product.name}")
 
+    lines.append("\nThis is an automated notification from Savannah Informatics.")
     body = "\n".join(lines)
+
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@example.com")
 
     try:
