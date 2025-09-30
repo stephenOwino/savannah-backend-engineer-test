@@ -119,11 +119,11 @@ ADMIN_EMAIL = config("ADMIN_EMAIL", default="stephenowin233@gmail.com")
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'stephenowin233@gmail.com'
-EMAIL_HOST_PASSWORD = 'kdzu ydrc rdym wchf'
+EMAIL_HOST_USER = "stephenowin233@gmail.com"
+EMAIL_HOST_PASSWORD = "kdzu ydrc rdym wchf"
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
