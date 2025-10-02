@@ -77,16 +77,28 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_customer(self, user):
-        """Get or create customer profile for authenticated user"""
-        customer, created = Customer.objects.get_or_create(user=user, defaults={"phone_number": "", "address": ""})
-        return customer
+        """Get customer profile for authenticated user"""
+        try:
+            customer = Customer.objects.get(user=user)
+
+            # Validate customer has required info before allowing orders
+            if not customer.phone_number or len(customer.phone_number) < 12:
+                raise ValueError("Customer phone number not configured")
+
+            return customer
+
+        except Customer.DoesNotExist:
+            raise ValueError("Customer profile does not exist. Please complete your profile first.")
 
     def get_queryset(self):
         """Return only orders belonging to the authenticated user"""
         if self.request.user.is_anonymous:
             return Order.objects.none()
-        customer = self.get_customer(self.request.user)
-        return self.queryset.filter(customer=customer)
+        try:
+            customer = self.get_customer(self.request.user)
+            return self.queryset.filter(customer=customer)
+        except ValueError:
+            return Order.objects.none()
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -101,15 +113,29 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         products_data = serializer.validated_data.get("products", [])
         if not products_data:
             return Response(
                 {"error": "Order must contain at least one product."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        customer = self.get_customer(request.user)
+
+        # Get customer and validate profile
+        try:
+            customer = self.get_customer(request.user)
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Log customer info for debugging
+        logger.info(f"Creating order for customer {customer.id}, phone: {customer.phone_number}")
+
         product_ids = [item["product_id"] for item in products_data]
         products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
+
         for item in products_data:
             product_id = item["product_id"]
             quantity = item["quantity"]
@@ -124,6 +150,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                     {"error": f"Insufficient stock for {product.name}. " f"Requested: {quantity}, Available: {product.stock}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
         order = Order.objects.create(customer=customer)
         for item in products_data:
             product = products[item["product_id"]]
@@ -131,12 +158,15 @@ class OrderViewSet(viewsets.ModelViewSet):
             OrderItem.objects.create(order=order, product=product, quantity=quantity)
             product.stock -= quantity
             product.save()
+
         order.update_total_amount()
+
         try:
             notifications.send_order_confirmation_sms(order)
             notifications.send_new_order_admin_email(order)
         except Exception as e:
             logger.warning(f"Notification failed for order {order.id}: {e}")
+
         response_serializer = self.get_serializer(order)
         headers = self.get_success_headers(response_serializer.data)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
