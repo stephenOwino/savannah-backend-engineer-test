@@ -15,7 +15,7 @@ from rest_framework.response import Response
 
 # Local application imports
 from . import notifications
-from .models import Category, Customer, Order, OrderItem, Product
+from .models import Category, Customer, Order, Product
 from .permissions import IsCustomerOrReadOnly, IsOwnerOrReadOnly
 from .serializers import CategorySerializer, OrderSerializer, ProductSerializer
 
@@ -76,28 +76,27 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
+    def get_customer(self, user):
+        """Get customer profile for authenticated user"""
+        try:
+            customer = Customer.objects.get(user=user)
 
-def get_customer(self, user):
-    """Get customer profile for authenticated user"""
-    try:
-        customer = Customer.objects.get(user=user)
+            # Auto-fix empty phone numbers
+            if not customer.phone_number or len(customer.phone_number) < 12:
+                if not customer.phone_number:
+                    customer.phone_number = "+254700000000"
+                    customer.save()
+                    logger.warning(f"Auto-assigned phone number for customer {customer.id}")
+                else:
+                    raise ValueError("Customer phone number not configured")
 
-        # Auto-fix empty phone numbers
-        if not customer.phone_number or len(customer.phone_number) < 12:
-            if not customer.phone_number:
-                customer.phone_number = "+254700000000"
-                customer.save()
-                logger.warning(f"Auto-assigned phone number for customer {customer.id}")
-            else:
-                raise ValueError("Customer phone number not configured")
+            return customer
 
-        return customer
-
-    except Customer.DoesNotExist:
-        # Create customer with default phone
-        customer = Customer.objects.create(user=user, phone_number="+254700000000", address="Test Address")
-        logger.info(f"Created customer profile for user {user.id}")
-        return customer
+        except Customer.DoesNotExist:
+            # Create customer with default phone
+            customer = Customer.objects.create(user=user, phone_number="+254700000000", address="Test Address")
+            logger.info(f"Created customer profile for user {user.id}")
+            return customer
 
     def get_queryset(self):
         """Return only orders belonging to the authenticated user"""
@@ -113,12 +112,6 @@ def get_customer(self, user):
     def create(self, request, *args, **kwargs):
         """
         Create order with stock validation and notifications.
-        Process:
-        1. Validate request data
-        2. Check product availability and stock
-        3. Create order and order items
-        4. Update product stock
-        5. Send notifications
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -160,15 +153,8 @@ def get_customer(self, user):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        order = Order.objects.create(customer=customer)
-        for item in products_data:
-            product = products[item["product_id"]]
-            quantity = item["quantity"]
-            OrderItem.objects.create(order=order, product=product, quantity=quantity)
-            product.stock -= quantity
-            product.save()
-
-        order.update_total_amount()
+        # CRITICAL FIX: Pass customer to serializer.save()
+        order = serializer.save(customer=customer)
 
         try:
             notifications.send_order_confirmation_sms(order)
