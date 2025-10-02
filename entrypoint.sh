@@ -40,10 +40,14 @@ else:
     print("✓ Reviewer account exists")
 EOF
 
-# Start Gunicorn
+    # Start Gunicorn
 echo "Starting Gunicorn on port ${APP_PORT}..."
 exec gunicorn --timeout 90 \
     --worker-tmp-dir /dev/shm \
     --workers 3 \
     --bind 0.0.0.0:${APP_PORT} \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info \
+    --capture-output \
     savannah_assess.wsgi:application
