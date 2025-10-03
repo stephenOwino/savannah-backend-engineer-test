@@ -40,8 +40,6 @@ else:
     print("✓ Reviewer account exists")
 EOF
 
-    # Start Gunicorn
-echo "Starting Gunicorn on port ${APP_PORT}..."
 exec gunicorn --timeout 90 \
     --worker-tmp-dir /dev/shm \
     --workers 3 \
